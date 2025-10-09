@@ -22,10 +22,12 @@ router.post("/register", async (req, res) => {
         const hashedPassword = await bcrypt.hash(password, salt);
 
         // Guardar usuario
+        // Cambiar a:
         const result = await pool.query(
-            "INSERT INTO usuarios (nombre, correo, password) VALUES ($1, $2, $3) RETURNING id_usuario, nombre, correo",
+            'INSERT INTO usuarios (nombre, correo, "contraseña") VALUES ($1, $2, $3) RETURNING id_usuario, nombre, correo',
             [nombre, correo, hashedPassword]
         );
+
 
         res.json(result.rows[0]);
     } catch (err) {
@@ -48,10 +50,11 @@ router.post("/login", async (req, res) => {
         const usuario = result.rows[0];
 
         // Comparar contraseña
-        const isMatch = await bcrypt.compare(password, usuario.password);
+        const isMatch = await bcrypt.compare(password, usuario.contraseña);
         if (!isMatch) {
             return res.status(400).send("Correo o contraseña incorrectos");
         }
+
 
         // Generar token JWT
         const token = jwt.sign(

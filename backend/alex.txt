@@ -1,0 +1,2 @@
+instale dependias para conectar con postgresql
+npm install pg
