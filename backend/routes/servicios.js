@@ -1,6 +1,7 @@
-const express = require("express");
-const pool = require("../db/db");
-const autenticar = require("../middleware/auth");
+import express from "express";
+import { supabase } from "../config/supabaseClient.js";
+import { autenticar } from "../middleware/auth.js";
+
 const router = express.Router();
 
 // Crear servicio (solo usuarios autenticados)
@@ -9,20 +10,20 @@ router.post("/", autenticar, async (req, res) => {
         const { nombre, descripcion, precio } = req.body;
         const id_prestador = req.usuario.id_usuario;
 
-        // Validar que los campos no esten vacios
-        if (!nombre || !descripcion || precio == null) {
+        if (!nombre || !descripcion || precio == null)
             return res.status(400).send("Todos los campos son obligatorios");
-        }
-        if (precio < 0) {
+
+        if (precio < 0)
             return res.status(400).send("El precio debe ser un valor positivo");
-        }
 
-        const result = await pool.query(
-            "INSERT INTO servicios (id_prestador, nombre, descripcion, precio) VALUES ($1, $2, $3, $4) RETURNING *",
-            [id_prestador, nombre, descripcion, precio]
-        );
+        const { data, error } = await supabase
+            .from("servicios")
+            .insert([{ id_prestador, nombre, descripcion, precio }])
+            .select();
 
-        res.json(result.rows[0]);
+        if (error) throw error;
+
+        res.json(data[0]);
     } catch (err) {
         console.error(err.message);
         res.status(500).send("Error al crear servicio");
@@ -32,10 +33,20 @@ router.post("/", autenticar, async (req, res) => {
 // Listar todos los servicios
 router.get("/", autenticar, async (req, res) => {
     try {
-        const result = await pool.query(
-            "SELECT s.*, u.nombre AS prestador_nombre FROM servicios s JOIN usuarios u ON s.id_prestador = u.id_usuario"
-        );
-        res.json(result.rows);
+        const { data, error } = await supabase
+            .from("servicios")
+            .select("*, usuarios(id_usuario, nombre)")
+            .order("id_servicio", { ascending: true });
+
+        if (error) throw error;
+
+        // Combinar prestador_nombre
+        const servicios = data.map(s => ({
+            ...s,
+            prestador_nombre: s.usuarios?.nombre
+        }));
+
+        res.json(servicios);
     } catch (err) {
         console.error(err.message);
         res.status(500).send("Error al obtener servicios");
@@ -46,85 +57,92 @@ router.get("/", autenticar, async (req, res) => {
 router.get("/:id", autenticar, async (req, res) => {
     try {
         const { id } = req.params;
-        const result = await pool.query(
-            "SELECT s.*, u.nombre AS prestador_nombre FROM servicios s JOIN usuarios u ON s.id_prestador = u.id_usuario WHERE s.id_servicio = $1",
-            [id]
-        );
 
-        if (result.rows.length === 0) {
-            return res.status(404).send("Servicio no encontrado");
-        }
+        const { data, error } = await supabase
+            .from("servicios")
+            .select("*, usuarios(id_usuario, nombre)")
+            .eq("id_servicio", id)
+            .single();
 
-        res.json(result.rows[0]);
+        if (error) return res.status(404).send("Servicio no encontrado");
+
+        const servicio = { ...data, prestador_nombre: data.usuarios?.nombre };
+        res.json(servicio);
     } catch (err) {
         console.error(err.message);
         res.status(500).send("Error al obtener servicio");
     }
 });
 
-// Actualizar servicio (solo el prestador puede actualizar)
+// Actualizar servicio (solo el proovedor)
 router.put("/:id", autenticar, async (req, res) => {
     try {
         const { id } = req.params;
         const { nombre, descripcion, precio } = req.body;
         const id_prestador = req.usuario.id_usuario;
 
-        // Validar que no esten vacios
-        if (!nombre || !descripcion || precio == null) {
+        if (!nombre || !descripcion || precio == null)
             return res.status(400).send("Todos los campos son obligatorios");
-        }
-        if (precio < 0) {
+
+        if (precio < 0)
             return res.status(400).send("El precio debe ser un valor positivo");
-        }
 
         // Verificar propietario
-        const servicioExistente = await pool.query(
-            "SELECT * FROM servicios WHERE id_servicio = $1 AND id_prestador = $2",
-            [id, id_prestador]
-        );
+        const { data: servicio, error } = await supabase
+            .from("servicios")
+            .select("*")
+            .eq("id_servicio", id)
+            .eq("id_prestador", id_prestador)
+            .single();
 
-        if (servicioExistente.rows.length === 0) {
-            return res.status(403).send("No puedes actualizar este servicio");
-        }
+        if (!servicio) return res.status(403).send("No puedes actualizar este servicio");
+        if (error) throw error;
 
-        const result = await pool.query(
-            "UPDATE servicios SET nombre = $1, descripcion = $2, precio = $3 WHERE id_servicio = $4 RETURNING *",
-            [nombre, descripcion, precio, id]
-        );
+        const { data, error: updateError } = await supabase
+            .from("servicios")
+            .update({ nombre, descripcion, precio })
+            .eq("id_servicio", id)
+            .select();
 
-        res.json(result.rows[0]);
+        if (updateError) throw updateError;
+
+        res.json(data[0]);
     } catch (err) {
         console.error(err.message);
         res.status(500).send("Error al actualizar servicio");
     }
 });
 
-// Eliminar servicio (solo el prestador puede eliminar)
+// Eliminar servicio (solo el prestador)
 router.delete("/:id", autenticar, async (req, res) => {
     try {
         const { id } = req.params;
         const id_prestador = req.usuario.id_usuario;
 
         // Verificar propietario
-        const servicioExistente = await pool.query(
-            "SELECT * FROM servicios WHERE id_servicio = $1 AND id_prestador = $2",
-            [id, id_prestador]
-        );
+        const { data: servicio, error } = await supabase
+            .from("servicios")
+            .select("*")
+            .eq("id_servicio", id)
+            .eq("id_prestador", id_prestador)
+            .single();
 
-        if (servicioExistente.rows.length === 0) {
-            return res.status(403).send("No puedes eliminar este servicio");
-        }
+        if (!servicio) return res.status(403).send("No puedes eliminar este servicio");
+        if (error) throw error;
 
-        const result = await pool.query(
-            "DELETE FROM servicios WHERE id_servicio = $1 RETURNING *",
-            [id]
-        );
+        const { data, error: deleteError } = await supabase
+            .from("servicios")
+            .delete()
+            .eq("id_servicio", id)
+            .select();
 
-        res.json({ mensaje: "Servicio eliminado", servicio: result.rows[0] });
+        if (deleteError) throw deleteError;
+
+        res.json({ mensaje: "Servicio eliminado", servicio: data[0] });
     } catch (err) {
         console.error(err.message);
         res.status(500).send("Error al eliminar servicio");
     }
 });
 
-module.exports = router;
+export default router;

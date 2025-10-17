@@ -66,12 +66,17 @@ export default {
     methods: {
         async login() {
             try {
-                //Se puede enviar el  tipoUsuario si lo necesito mas adelante
                 const res = await axios.post('http://localhost:4000/api/usuarios/login', {
                     correo: this.correo,
                     contrasena: this.contrasena
                 });
                 localStorage.setItem('token', res.data.token);
+                localStorage.setItem('id_usuario', res.data.usuario.id_usuario); // Almacenar id_usuario
+                localStorage.setItem('nombre', res.data.usuario.nombre);
+                // Si el usuario es proveedor/prestador, guardar también id_proveedor para compatibilidad
+                if (res.data.usuario.tipo_usuario === 'proveedor' || res.data.usuario.tipo_usuario === 'prestador') {
+                    localStorage.setItem('id_proveedor', res.data.usuario.id_usuario);
+                }
                 // Redirigir según sea el tipo de usuario
                 const tipo = res.data.usuario?.tipo_usuario;
                 if (tipo === 'cliente') {

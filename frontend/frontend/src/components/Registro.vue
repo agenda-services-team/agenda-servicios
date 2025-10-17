@@ -60,10 +60,13 @@
                     required />
             </div>
             <div class="mb-3 w-100">
+                <input v-model="telefono" type="telefono" class="form-control" placeholder="telefono" required />
+            </div>
+            <div class="mb-3 w-100">
                 <label for="tipoUsuario" class="form-label">Tipo de usuario:</label>
                 <select v-model="tipoUsuario" id="tipoUsuario" class="form-select" required>
                     <option value="cliente">Cliente</option>
-                    <option value="prestador">Prestador</option>
+                    <option value="proveedor">Proveedor</option>
                 </select>
             </div>
             <button type="submit" class="btn btn-primary w-100">Registrarse</button>
@@ -85,6 +88,7 @@ export default {
             contrasena: '',
             confirmarContrasena: '',
             mostrarContrasena: false,
+            telefono: '',
             tipoUsuario: 'cliente',
             mensaje: '',
             contrasenaError: false
@@ -103,6 +107,7 @@ export default {
                     nombre: this.nombre,
                     correo: this.correo,
                     contrasena: this.contrasena,
+                    telefono: this.telefono,
                     tipo_usuario: this.tipoUsuario
                 });
                 this.mensaje = "Usuario registrado, ahora haz login";

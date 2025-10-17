@@ -1,100 +1,84 @@
+import express from "express";
+import bcrypt from "bcryptjs";
+import jwt from "jsonwebtoken";
+import { supabase } from "../config/supabaseClient.js";
 
-const express = require("express");
-const pool = require("../db/db");
+
 const router = express.Router();
+
+const JWT_SECRET = "mi_contraseña_secreta";
+
+//Registro de usuario
+router.post("/registro", async (req, res) => {
+    console.log("🔔 Registro request body:", req.body);
+    try {
+        const { nombre, correo, contrasena, telefono, tipo_usuario } = req.body;
+
+        // Verificar si ya existe el correo
+        const { data: existe, error: errorExiste } = await supabase
+            .from("usuarios")
+            .select("*")
+            .eq("correo", correo);
+
+        if (errorExiste) throw errorExiste;
+        if (existe.length > 0) return res.status(400).send("Correo ya registrado");
+
+        const hashed = await bcrypt.hash(contrasena, 10);
+
+        // Insertar nuevo usuario
+        const { data, error } = await supabase
+            .from("usuarios")
+            .insert([
+                {
+                    nombre,
+                    correo,
+                    contrasena: hashed,
+                    telefono,
+                    tipo_usuario,
+                    fecha_registro: new Date()
+                }
+            ])
+            .select();
+
+        if (error) throw error;
+
+        res.json({ mensaje: "Usuario registrado con éxito", usuario: data[0] });
+    } catch (err) {
+        console.error("❌ Error en registro:", err.message);
+        res.status(500).send("Error en el registro");
+    }
+});
 
 // Login de usuario
 router.post("/login", async (req, res) => {
     try {
         const { correo, contrasena } = req.body;
-        const result = await pool.query(
-            "SELECT * FROM usuarios WHERE correo = $1 AND contrasena = $2",
-            [correo, contrasena]
+
+        const { data, error } = await supabase
+            .from("usuarios")
+            .select("*")
+            .eq("correo", correo);
+
+        if (error) throw error;
+        if (data.length === 0) return res.status(400).send("Correo o contraseña incorrectos");
+
+        const usuario = data[0];
+        const isMatch = await bcrypt.compare(contrasena, usuario.contrasena);
+
+        if (!isMatch) return res.status(400).send("Correo o contraseña incorrectos");
+
+        const token = jwt.sign(
+            { id_usuario: usuario.id_usuario, nombre: usuario.nombre, tipo_usuario: usuario.tipo_usuario },
+            JWT_SECRET,
+            { expiresIn: "2h" }
         );
-        if (result.rows.length === 0) {
-            return res.status(401).json({ mensaje: "Correo o contraseña incorrectos" });
-        }
-        // Aquí podrías generar un token si lo deseas
-        res.json({ mensaje: "Login exitoso", usuario: result.rows[0] });
+
+        //Se modifica la respuesta para incluir datos del usuario
+        res.json({ token, usuario: { id_usuario: usuario.id_usuario, nombre: usuario.nombre, tipo_usuario: usuario.tipo_usuario } });
     } catch (err) {
-        console.error(err.message);
-        res.status(500).send("Error al iniciar sesión");
+        console.error("❌ Error en login:", err.message);
+        res.status(500).send("Error en el login");
     }
 });
 
-// Registro de usuario
-router.post("/registro", async (req, res) => {
-    try {
-        const { nombre, correo, contrasena, tipo_usuario } = req.body;
-        const result = await pool.query(
-            "INSERT INTO usuarios (nombre, correo, contrasena, tipo_usuario) VALUES ($1, $2, $3, $4) RETURNING *",
-            [nombre, correo, contrasena, tipo_usuario]
-        );
-        res.json(result.rows[0]);
-    } catch (err) {
-        console.error(err.message);
-        res.status(500).send("Error al registrar usuario");
-    }
-});
-
-//Listar todos los usuarios
-router.get("/", async (req, res) => {
-    try {
-        const result = await pool.query("SELECT * FROM usuarios");
-        res.json(result.rows);
-    } catch (err) {
-        console.error(err.message);
-        res.status(500).send("Error al obtener usuarios");
-    }
-});
-
-//Obtener un usuario por ID
-router.get("/:id", async (req, res) => {
-    try {
-        const { id } = req.params;
-        const result = await pool.query("SELECT * FROM usuarios WHERE id_usuario = $1", [id]);
-        if (result.rows.length === 0) {
-            return res.status(404).send("Usuario no encontrado");
-        }
-        res.json(result.rows[0]);
-    } catch (err) {
-        console.error(err.message);
-        res.status(500).send("Error al obtener usuario");
-    }
-});
-
-//Actualizar usuario
-router.put("/:id", async (req, res) => {
-    try {
-        const { id } = req.params;
-        const { nombre, email } = req.body;
-        const result = await pool.query(
-            "UPDATE usuarios SET nombre = $1, email = $2 WHERE id_usuario = $3 RETURNING *",
-            [nombre, email, id]
-        );
-        if (result.rows.length === 0) {
-            return res.status(404).send("Usuario no encontrado");
-        }
-        res.json(result.rows[0]);
-    } catch (err) {
-        console.error(err.message);
-        res.status(500).send("Error al actualizar usuario");
-    }
-});
-
-//Eliminar usuario
-router.delete("/:id", async (req, res) => {
-    try {
-        const { id } = req.params;
-        const result = await pool.query("DELETE FROM usuarios WHERE id_usuario = $1 RETURNING *", [id]);
-        if (result.rows.length === 0) {
-            return res.status(404).send("Usuario no encontrado");
-        }
-        res.json({ mensaje: "Usuario eliminado", usuario: result.rows[0] });
-    } catch (err) {
-        console.error(err.message);
-        res.status(500).send("Error al eliminar usuario");
-    }
-});
-
-module.exports = router;
+export default router;

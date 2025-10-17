@@ -1,12 +1,17 @@
 <template>
   <div id="app">
-    <!-- Navbar y Footer solo si no estamos en /login o /registro -->
-    <Navbar v-if="$route.path !== '/login' && $route.path !== '/registro' && $route.path !== '/dashboard'" />
-    <main class="main-content"
-      :class="{ 'no-padding': $route.path === '/login' || $route.path === '/registro' || $route.path === '/dashboard' }">
-      <router-view />
-    </main>
-    <Footer v-if="$route.path !== '/login' && $route.path !== '/registro' && $route.path !== '/dashboard'" />
+    <!-- Renderiza directamente el router-view para rutas de dashboard -->
+    <router-view v-if="$route.path.startsWith('/dashboard')" />
+
+    <!-- Para otras rutas, muestra Navbar, contenido y Footer -->
+    <template v-else>
+      <Navbar v-if="$route.path !== '/login' && $route.path !== '/registro'" />
+      <main
+        :class="{ 'main-content': !$route.path.startsWith('/dashboard'), 'no-padding': $route.path === '/login' || $route.path === '/registro' }">
+        <router-view />
+      </main>
+      <Footer v-if="$route.path !== '/login' && $route.path !== '/registro'" />
+    </template>
   </div>
 </template>
 
@@ -14,6 +19,7 @@
 import Navbar from './components/Navbar.vue';
 import Footer from './components/Footer.vue';
 import { computed } from 'vue';
+import { useRoute } from 'vue-router'; // Importar useRoute
 import { useAuthStore } from './store';
 
 export default {
@@ -21,33 +27,31 @@ export default {
   components: { Navbar, Footer },
   setup() {
     const store = useAuthStore();
+    const route = useRoute();
     const isAuth = computed(() => store.isAuthenticated);
     const logout = () => {
       store.logout();
     };
-    return { isAuth, logout };
+    return { isAuth, route };
   }
 }
 </script>
 
 <style>
-/* Estilos globales para toda la plataforma*/
 #app {
   font-family: Arial, sans-serif;
   display: flex;
   flex-direction: column;
   min-height: 100vh;
-  /* Toda la altura de la ventana */
 }
 
-/* Se agrega el  padding al main para qeu el contenido no quede debajo del headre */
 .main-content {
   flex: 1;
   padding-top: 80px;
   margin: 0 auto;
 }
 
-.main-content.no-padding {
+.no-padding {
   padding-top: 0;
 }
 </style>

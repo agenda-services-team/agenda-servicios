@@ -1,6 +1,7 @@
-const express = require("express");
-const pool = require("../db/db");
-const autenticar = require("../middleware/auth");
+import express from "express";
+import { supabase } from "../config/supabaseClient.js";
+import { autenticar } from "../middleware/auth.js";
+
 const router = express.Router();
 
 // Crear una cita
@@ -9,38 +10,39 @@ router.post("/", autenticar, async (req, res) => {
         const { id_servicio, fecha, hora } = req.body;
         const id_cliente = req.usuario.id_usuario;
 
-        // Validar que no hay vacios
-        if (!id_servicio || !fecha || !hora) {
+        if (!id_servicio || !fecha || !hora)
             return res.status(400).send("Todos los campos son obligatorios");
-        }
 
         const fechaHoy = new Date();
-        const fechaCita = new Date(fecha + " " + hora);
-        if (fechaCita < fechaHoy) {
+        const fechaCita = new Date(`${fecha} ${hora}`);
+        if (fechaCita < fechaHoy)
             return res.status(400).send("No puedes reservar en una fecha pasada");
-        }
 
         const horaNum = parseInt(hora.split(":")[0]);
-        if (horaNum < 8 || horaNum > 20) {
+        if (horaNum < 8 || horaNum > 20)
             return res.status(400).send("Horario fuera del rango permitido (08:00-20:00)");
-        }
 
         // Validar que no exista otra cita en el mismo servicio, fecha y hora
-        const existe = await pool.query(
-            "SELECT * FROM citas WHERE id_servicio = $1 AND fecha = $2 AND hora = $3",
-            [id_servicio, fecha, hora]
-        );
+        const { data: citasExistentes, error: errorSelect } = await supabase
+            .from("citas")
+            .select("*")
+            .eq("id_servicio", id_servicio)
+            .eq("fecha", fecha)
+            .eq("hora", hora);
 
-        if (existe.rows.length > 0) {
+        if (errorSelect) throw errorSelect;
+
+        if (citasExistentes.length > 0)
             return res.status(400).send("Ese horario ya está reservado");
-        }
 
-        const result = await pool.query(
-            "INSERT INTO citas (id_cliente, id_servicio, fecha, hora, estado, creado_en) VALUES ($1, $2, $3, $4, 'activa', NOW()) RETURNING *",
-            [id_cliente, id_servicio, fecha, hora]
-        );
+        const { data, error } = await supabase
+            .from("citas")
+            .insert([{ id_cliente, id_servicio, fecha, hora, estado: "activa", creado_en: new Date() }])
+            .select();
 
-        res.json(result.rows[0]);
+        if (error) throw error;
+
+        res.json(data[0]);
     } catch (err) {
         console.error(err.message);
         res.status(500).send("Error al crear cita");
@@ -50,16 +52,24 @@ router.post("/", autenticar, async (req, res) => {
 // Listar todas las citas
 router.get("/", autenticar, async (req, res) => {
     try {
-        const result = await pool.query(
-            `SELECT c.id_cita, c.fecha, c.hora, c.estado, c.creado_en,
-                    u.nombre AS cliente, u.correo,
-                    s.nombre AS servicio, s.precio, s.descripcion
-             FROM citas c
-             JOIN usuarios u ON c.id_cliente = u.id_usuario
-             JOIN servicios s ON c.id_servicio = s.id_servicio
-             ORDER BY c.fecha, c.hora`
-        );
-        res.json(result.rows);
+        const { data, error } = await supabase
+            .from("citas")
+            .select("*, usuarios(id_usuario, nombre, correo), servicios(id_servicio, nombre, descripcion, precio)")
+            .order("fecha", { ascending: true })
+            .order("hora", { ascending: true });
+
+        if (error) throw error;
+
+        const citas = data.map(c => ({
+            ...c,
+            cliente: c.usuarios?.nombre,
+            correo: c.usuarios?.correo,
+            servicio: c.servicios?.nombre,
+            precio: c.servicios?.precio,
+            descripcion: c.servicios?.descripcion
+        }));
+
+        res.json(citas);
     } catch (err) {
         console.error(err.message);
         res.status(500).send("Error al obtener citas");
@@ -70,21 +80,25 @@ router.get("/", autenticar, async (req, res) => {
 router.get("/:id", autenticar, async (req, res) => {
     try {
         const { id } = req.params;
-        const result = await pool.query(
-            `SELECT c.id_cita, c.fecha, c.hora, c.estado, c.creado_en,
-                    u.nombre AS cliente, u.correo,
-                    s.nombre AS servicio, s.precio, s.descripcion
-             FROM citas c
-             JOIN usuarios u ON c.id_cliente = u.id_usuario
-             JOIN servicios s ON c.id_servicio = s.id_servicio
-             WHERE c.id_cita = $1`, [id]
-        );
 
-        if (result.rows.length === 0) {
-            return res.status(404).send("Cita no encontrada");
-        }
+        const { data, error } = await supabase
+            .from("citas")
+            .select("*, usuarios(id_usuario, nombre, correo), servicios(id_servicio, nombre, descripcion, precio)")
+            .eq("id_cita", id)
+            .single();
 
-        res.json(result.rows[0]);
+        if (error || !data) return res.status(404).send("Cita no encontrada");
+
+        const cita = {
+            ...data,
+            cliente: data.usuarios?.nombre,
+            correo: data.usuarios?.correo,
+            servicio: data.servicios?.nombre,
+            precio: data.servicios?.precio,
+            descripcion: data.servicios?.descripcion
+        };
+
+        res.json(cita);
     } catch (err) {
         console.error(err.message);
         res.status(500).send("Error al obtener cita");
@@ -97,40 +111,39 @@ router.put("/:id", autenticar, async (req, res) => {
         const { id } = req.params;
         const { fecha, hora } = req.body;
 
-        // Validar que los campos no esten vacios
-        if (!fecha || !hora) {
+        if (!fecha || !hora)
             return res.status(400).send("Todos los campos son obligatorios");
-        }
+
         const fechaHoy = new Date();
-        const fechaCita = new Date(fecha + " " + hora);
-        if (fechaCita < fechaHoy) {
+        const fechaCita = new Date(`${fecha} ${hora}`);
+        if (fechaCita < fechaHoy)
             return res.status(400).send("No puedes reservar en una fecha pasada");
-        }
+
         const horaNum = parseInt(hora.split(":")[0]);
-        if (horaNum < 8 || horaNum > 20) {
+        if (horaNum < 8 || horaNum > 20)
             return res.status(400).send("Horario fuera del rango permitido (08:00-20:00)");
-        }
 
-        // Verificar que no haya otra cita en ese horario
-        const existe = await pool.query(
-            "SELECT * FROM citas WHERE id_cita != $1 AND fecha = $2 AND hora = $3",
-            [id, fecha, hora]
-        );
+        const { data: citasExistentes, error: errorSelect } = await supabase
+            .from("citas")
+            .select("*")
+            .neq("id_cita", id)
+            .eq("fecha", fecha)
+            .eq("hora", hora);
 
-        if (existe.rows.length > 0) {
+        if (errorSelect) throw errorSelect;
+
+        if (citasExistentes.length > 0)
             return res.status(400).send("Ese horario ya está ocupado");
-        }
 
-        const result = await pool.query(
-            "UPDATE citas SET fecha = $1, hora = $2 WHERE id_cita = $3 RETURNING *",
-            [fecha, hora, id]
-        );
+        const { data, error } = await supabase
+            .from("citas")
+            .update({ fecha, hora })
+            .eq("id_cita", id)
+            .select();
 
-        if (result.rows.length === 0) {
-            return res.status(404).send("Cita no encontrada");
-        }
+        if (error || !data.length) return res.status(404).send("Cita no encontrada");
 
-        res.json(result.rows[0]);
+        res.json(data[0]);
     } catch (err) {
         console.error(err.message);
         res.status(500).send("Error al actualizar cita");
@@ -141,20 +154,20 @@ router.put("/:id", autenticar, async (req, res) => {
 router.delete("/:id", autenticar, async (req, res) => {
     try {
         const { id } = req.params;
-        const result = await pool.query(
-            "DELETE FROM citas WHERE id_cita = $1 RETURNING *",
-            [id]
-        );
 
-        if (result.rows.length === 0) {
-            return res.status(404).send("Cita no encontrada");
-        }
+        const { data, error } = await supabase
+            .from("citas")
+            .delete()
+            .eq("id_cita", id)
+            .select();
 
-        res.json({ mensaje: "Cita eliminada", cita: result.rows[0] });
+        if (error || !data.length) return res.status(404).send("Cita no encontrada");
+
+        res.json({ mensaje: "Cita eliminada", cita: data[0] });
     } catch (err) {
         console.error(err.message);
         res.status(500).send("Error al eliminar cita");
     }
 });
 
-module.exports = router;
+export default router;
