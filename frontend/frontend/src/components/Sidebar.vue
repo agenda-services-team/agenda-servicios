@@ -11,7 +11,7 @@
             <router-link to="/dashboard/agenda" class="menu-item">
                 <i class="icon">📅</i> Agenda
             </router-link>
-            <router-link to="/servicios" class="menu-item">
+            <router-link to="/dashboard/servicios" class="menu-item">
                 <i class="icon">💇</i> Servicios
             </router-link>
             <!-- Comentado hasta que se definan las rutas -->

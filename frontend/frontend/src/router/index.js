@@ -3,7 +3,7 @@ import Home from '../views/Home.vue'; // Asegúrate de que este componente esté
 import Login from '../components/Login.vue';
 import Registro from '../components/Registro.vue';
 import Dashboard from '../layouts/Dashboard.vue';
-import Servicios from '../components/Servicios.vue';
+import Servicios from '../views/Servicios.vue';
 import Inicio from '../views/Inicio.vue';
 import Agenda from '../views/Agenda.vue';
 import RegistrarEmprendimiento from '../components/RegisterEmpre.vue'; // Importar el nuevo componente
@@ -21,9 +21,9 @@ const routes = [
             { path: '', component: Inicio },
             { path: 'agenda', component: Agenda },
             { path: 'emprendimiento', component: RegistrarEmprendimiento }, // Nueva ruta
+            { path: 'servicios', component: Servicios }, // Movido dentro del dashboard
         ],
     },
-    { path: '/servicios', component: Servicios },
 ];
 
 const router = createRouter({

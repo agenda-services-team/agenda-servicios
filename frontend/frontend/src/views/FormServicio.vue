@@ -3,18 +3,22 @@
         <div class="modal-content">
             <button class="close" aria-label="Cerrar" @click="$emit('close')">×</button>
             <h2>Agregar Servicio</h2>
-            <form @submit.prevent="submitForm">
-                <label for="prestador">Nombre del prestador:</label>
-                <input type="text" id="prestador" v-model="nombrePrestador" required />
 
-                <label for="servicio">Nombre del Servicio:</label>
+            <form @submit.prevent="submitForm">
+                <label for="servicio">Nombre del servicio:</label>
                 <input type="text" id="servicio" v-model="nombreServicio" required />
+
+                <label for="descripcion">Descripción:</label>
+                <input type="text" id="descripcion" v-model="descripcion" required />
 
                 <label for="precio">Precio:</label>
                 <input type="number" id="precio" v-model="precio" required />
 
-                <label for="descripcion">Descripción</label>
-                <input type="text" id="descripcion" v-model="descripcion" required />
+                <label for="duracion">Duración aproximada:</label>
+                <input type="text" id="duracion" v-model="duracion" required />
+
+                <label for="imagen">Imagen del servicio:</label>
+                <input type="file" id="imagen" accept="image/*" @change="handleImageChange" required />
 
                 <div class="actions">
                     <button type="button" class="btn-cancel" @click="$emit('close')">Cancelar</button>
@@ -30,16 +34,52 @@ export default {
     name: 'ServicioForm',
     data() {
         return {
-            nombrePrestador: '',
             nombreServicio: '',
+            descripcion: '',
             precio: '',
-            descripcion: ''
+            duracion: '',
+            imagen: null
         };
     },
     methods: {
-        submitForm() {
-            console.log('Servicio agregado:', this.nombrePrestador, this.nombreServicio, this.precio, this.descripcion);
-            this.$emit('close');
+        handleImageChange(event) {
+            this.imagen = event.target.files[0];
+        },
+        async submitForm() {
+            try {
+                const token = localStorage.getItem('token');
+                const formData = new FormData();
+                formData.append('nombre_servicio', this.nombreServicio);
+                formData.append('descripcion', this.descripcion);
+                formData.append('precio', parseFloat(this.precio));
+                formData.append('duracion', this.duracion);
+                if (this.imagen) {
+                    formData.append('imagen', this.imagen);
+                }
+
+                const response = await fetch('http://localhost:4000/api/servicios', {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: formData
+                });
+
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    throw new Error(errorText);
+                }
+
+                const data = await response.json();
+                console.log('Servicio agregado correctamente:', data);
+
+                this.$emit('servicio-agregado', data);
+                this.$emit('close');
+
+            } catch (error) {
+                console.error('Error al agregar servicio:', error);
+                alert('No se pudo guardar el servicio. Verifica los datos.');
+            }
         }
     }
 };
@@ -49,7 +89,6 @@ export default {
 .modal-overlay {
     position: fixed;
     inset: 0;
-    /* top:0; right:0; bottom:0; left:0 */
     background: rgba(0, 0, 0, 0.45);
     display: flex;
     align-items: center;
@@ -89,6 +128,10 @@ form input {
     margin-top: 6px;
     border-radius: 8px;
     border: 1px solid #ddd;
+}
+
+form input[type="file"] {
+    padding: 4px;
 }
 
 .actions {
