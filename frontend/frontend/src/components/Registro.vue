@@ -71,6 +71,10 @@
             </div>
             <button type="submit" class="btn btn-primary w-100">Registrarse</button>
             <p class="login-message mt-2">{{ mensaje }}</p>
+            <div class="register-link">
+                ¿Ya tienes una cuenta?
+                <router-link to="/login" class="unirme-link">Iniciar sesión</router-link>
+            </div>
         </form>
         <Footer />
     </div>
@@ -79,6 +83,7 @@
 <script>
 import axios from 'axios';
 import Footer from './Footer.vue';
+import Swal from 'sweetalert2';
 export default {
     components: { Footer },
     data() {
@@ -110,10 +115,23 @@ export default {
                     telefono: this.telefono,
                     tipo_usuario: this.tipoUsuario
                 });
-                this.mensaje = "Usuario registrado, ahora haz login";
-                this.$router.push('/');
+
+                await Swal.fire({
+                    icon: 'success',
+                    title: '¡Registro exitoso!',
+                    text: 'Tu cuenta ha sido creada correctamente. Ahora puedes iniciar sesión.',
+                    confirmButtonText: 'Continuar',
+                    confirmButtonColor: '#791236'
+                });
+
+                this.$router.push('/login');
             } catch (err) {
-                this.mensaje = err.response?.data || 'Error al registrar';
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error al registrar',
+                    text: err.response?.data || 'Ocurrió un error durante el registro. Por favor, intenta nuevamente.',
+                    confirmButtonColor: '#791236'
+                });
             }
         }
     }
@@ -285,5 +303,14 @@ export default {
     display: flex;
     align-items: center;
     justify-content: center;
+}
+
+.unirme-link {
+    color: #791236;
+    font-weight: 600;
+    margin-left: 6px;
+    text-decoration: underline;
+    cursor: pointer;
+    transition: color 0.2s;
 }
 </style>

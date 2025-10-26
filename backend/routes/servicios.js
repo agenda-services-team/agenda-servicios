@@ -99,6 +99,7 @@ router.get("/", autenticar, async (req, res) => {
                 )
             )
         `)
+            .eq('id_emprendimiento', req.usuario.id_emprendimiento)
             .order("id_servicio", { ascending: true });
 
         if (error) throw error;
@@ -242,6 +243,7 @@ router.delete("/:id", autenticar, async (req, res) => {
             .select("*")
             .eq("id_servicio", id)
             .eq("id_emprendimiento", id_emprendimiento)
+
             .single();
 
         if (fetchError || !servicioExistente) {

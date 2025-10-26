@@ -10,7 +10,7 @@ const JWT_SECRET = "mi_contraseña_secreta";
 
 //Registro de usuario
 router.post("/registro", async (req, res) => {
-    console.log("🔔 Registro request body:", req.body);
+    console.log("Registro request body:", req.body);
     try {
         const { nombre, correo, contrasena, telefono, tipo_usuario } = req.body;
 
@@ -44,7 +44,7 @@ router.post("/registro", async (req, res) => {
 
         res.json({ mensaje: "Usuario registrado con éxito", usuario: data[0] });
     } catch (err) {
-        console.error("❌ Error en registro:", err.message);
+        console.error("Error en registro:", err.message);
         res.status(500).send("Error en el registro");
     }
 });
@@ -76,7 +76,7 @@ router.post("/login", async (req, res) => {
         //Se modifica la respuesta para incluir datos del usuario
         res.json({ token, usuario: { id_usuario: usuario.id_usuario, nombre: usuario.nombre, tipo_usuario: usuario.tipo_usuario } });
     } catch (err) {
-        console.error("❌ Error en login:", err.message);
+        console.error("Error en login:", err.message);
         res.status(500).send("Error en el login");
     }
 });
