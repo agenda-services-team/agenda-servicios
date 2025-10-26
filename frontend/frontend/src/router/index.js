@@ -14,6 +14,7 @@ const routes = [
     { path: '/', component: Home },
     { path: '/login', component: Login },
     { path: '/registro', component: Registro },
+    { path: '/servicios', component: Servicios}, //Feat alex: nueva ruta para los clientes
     {
         path: '/dashboard',
         component: Dashboard,
@@ -21,7 +22,7 @@ const routes = [
             { path: '', component: Inicio },
             { path: 'agenda', component: Agenda },
             { path: 'emprendimiento', component: RegistrarEmprendimiento }, // Nueva ruta
-            { path: 'servicios', component: Servicios }, // Movido dentro del dashboard
+            //{ path: 'servicios', component: Servicios }, // Movido dentro del dashboard
         ],
     },
 ];
@@ -38,6 +39,12 @@ router.beforeEach(async (to, from, next) => {
     const store = useAuthStore();
     const isAuthenticated = store.isAuthenticated;
 
+    if (to.path === '/servicios') {
+        next();
+        return;
+    }
+
+    //Feat ALEX: clientes pueden ver sin login estricto
     // Verificar si el usuario está autenticado para rutas de dashboard
     if (to.path.startsWith('/dashboard') && !isAuthenticated) {
         next('/login');

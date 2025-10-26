@@ -16,6 +16,7 @@
     "@fullcalendar/vue3": "^6.1.19",
     "autoprefixer": "^10.4.21",
     "axios": "^1.12.2",
+    "pinia": "^3.0.3",
     "postcss": "^8.5.6",
     "sweetalert2": "^11.26.3",
     "vue": "^3.5.18",

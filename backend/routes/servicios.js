@@ -23,64 +23,151 @@ const upload = multer({
 
 const router = express.Router();
 
-
-router.post("/", autenticar, upload.single("imagen"), async (req, res) => {
+//feat: Alex
+// Obtener TODOS los servicios para clientes (sin filtro por emprendimiento)
+router.get("/public/todos", async (req, res) => {
     try {
-        const { nombre_servicio, descripcion, precio, duracion } = req.body;
-        const id_emprendimiento = req.usuario.id_emprendimiento;
-        let imagen_referencia = null;
-
-        // Validar campos obligatorios
-        if (!nombre_servicio || !descripcion || precio == null || !duracion) {
-            return res.status(400).send("Todos los campos son obligatorios");
-        }
-
-        if (precio < 0) {
-            return res.status(400).send("El precio debe ser un valor positivo");
-        }
-
-        // Subir imagen a Cloudinary si es que se dio
-        if (req.file) {
-            const result = await new Promise((resolve, reject) => {
-                const stream = cloudinary.uploader.upload_stream(
-                    { folder: "servicios" },
-                    (error, result) => {
-                        if (error) reject(error);
-                        else resolve(result);
-                    }
-                );
-                stream.end(req.file.buffer);
-            });
-
-            imagen_referencia = result.secure_url;
-        }
-
-        // Insertar servicio en Supabase
+        console.log('🔍 Ejecutando /public/todos');
+        
         const { data, error } = await supabase
             .from("servicios")
-            .insert([
-                {
+            .select(`
+                *,
+                emprendimientos (
                     id_emprendimiento,
-                    nombre_servicio,
-                    descripcion,
-                    precio: parseFloat(precio),
-                    duracion,
-                    imagen_referencia
-                }
-            ])
-            .select();
+                    nombre_negocio,
+                    usuarios (
+                        id_usuario,
+                        nombre
+                    )
+                )
+            `)
+            .order("id_servicio", { ascending: true });
 
-        if (error) throw error;
+        if (error) {
+            console.error('❌ Error Supabase:', error);
+            throw error;
+        }
 
-        res.json({
-            mensaje: "Servicio creado con éxito",
-            servicio: data[0]
-        });
+        console.log(`✅ Servicios encontrados: ${data?.length || 0}`);
+
+        const servicios = data.map((s) => ({
+            id_servicio: s.id_servicio,
+            nombre: s.nombre_servicio,
+            descripcion: s.descripcion,
+            precio: s.precio,
+            duracion: s.duracion,
+            imagen_referencia: s.imagen_referencia,
+            nombre_emprendimiento: s.emprendimientos?.nombre_negocio || "Sin nombre",
+            id_proveedor: s.emprendimientos?.usuarios?.id_usuario,
+            nombre_proveedor: s.emprendimientos?.usuarios?.nombre || "Desconocido"
+            // ELIMINAR email_proveedor ya que no existe
+        }));
+
+        res.json(servicios);
     } catch (error) {
-        console.error("Error al crear servicio:", error.message);
-        res.status(500).send("Error al crear servicio");
+        console.error("💥 Error al obtener servicios públicos:", error.message);
+        res.status(500).send("Error al obtener servicios: " + error.message);
     }
 });
+
+// Obtener servicios públicos con autenticación opcional
+router.get("/public/cliente", async (req, res) => { // ← QUITAR autenticar
+    try {
+        console.log('🔍 Ejecutando /public/cliente');
+        
+        const { data, error } = await supabase
+            .from("servicios")
+            .select(`
+                *,
+                emprendimientos (
+                    id_emprendimiento,
+                    nombre_negocio,
+                    descripcion,
+                    usuarios (
+                        id_usuario,
+                        nombre
+                    )
+                )
+            `)
+            .order("id_servicio", { ascending: true });
+
+        if (error) {
+            console.error('❌ Error Supabase:', error);
+            throw error;
+        }
+
+        console.log(`✅ Servicios encontrados: ${data?.length || 0}`);
+
+        const servicios = data.map((s) => ({
+            id_servicio: s.id_servicio,
+            nombre: s.nombre_servicio,
+            descripcion: s.descripcion,
+            precio: s.precio,
+            duracion: s.duracion,
+            imagen_referencia: s.imagen_referencia,
+            id_emprendimiento: s.id_emprendimiento,
+            nombre_emprendimiento: s.emprendimientos?.nombre_negocio || "Sin nombre",
+            descripcion_emprendimiento: s.emprendimientos?.descripcion,
+            id_proveedor: s.emprendimientos?.usuarios?.id_usuario,
+            nombre_proveedor: s.emprendimientos?.usuarios?.nombre || "Desconocido"
+        }));
+
+        res.json(servicios);
+    } catch (error) {
+        console.error("💥 Error al obtener servicios para cliente:", error.message);
+        res.status(500).send("Error al obtener servicios: " + error.message);
+    }
+});
+
+// Obtener servicios del proveedor logeado
+router.get("/proveedor/mis-servicios", autenticar, async (req, res) => {
+    try {
+        console.log('🔍 Ejecutando /proveedor/mis-servicios para usuario:', req.usuario.id_usuario);
+        
+        const { data, error } = await supabase
+            .from("servicios")
+            .select(`
+                *,
+                emprendimientos (
+                    id_emprendimiento,
+                    nombre_negocio,
+                    usuarios (
+                        id_usuario,
+                        nombre
+                    )
+                )
+            `)
+            .eq('id_emprendimiento', req.usuario.id_emprendimiento)
+            .order("id_servicio", { ascending: true });
+
+        if (error) {
+            console.error('❌ Error Supabase:', error);
+            throw error;
+        }
+
+        console.log(`✅ Servicios del proveedor: ${data?.length || 0}`);
+
+        const servicios = data.map((s) => ({
+            id_servicio: s.id_servicio,
+            id_emprendimiento: s.id_emprendimiento,
+            nombre: s.nombre_servicio,
+            descripcion: s.descripcion,
+            precio: s.precio,
+            duracion: s.duracion,
+            nombre_emprendimiento: s.emprendimientos?.nombre_negocio || "Sin nombre",
+            id_usuario: s.emprendimientos?.usuarios?.id_usuario || null,
+            nombre_proveedor: s.emprendimientos?.usuarios?.nombre || "Desconocido",
+            imagen_referencia: s.imagen_referencia
+        }));
+
+        res.json(servicios);
+    } catch (error) {
+        console.error("💥 Error al obtener servicios del proveedor:", error.message);
+        res.status(500).send("Error al obtener servicios: " + error.message);
+    }
+});
+//fin del feat : alex
 
 // Obtener todos los servicios
 router.get("/", autenticar, async (req, res) => {

@@ -53,6 +53,7 @@
 <script>
 import axios from 'axios';
 import Footer from './Footer.vue';
+import { useAuthStore } from '../store';
 export default {
     components: { Footer },
     data() {
@@ -66,28 +67,30 @@ export default {
     methods: {
         async login() {
             try {
+                console.log('🔑 Credenciales:', {
+                    correo: this.correo,
+                    tipoUsuario: this.tipoUsuario
+                });
+
                 const res = await axios.post('http://localhost:4000/api/usuarios/login', {
                     correo: this.correo,
-                    contrasena: this.contrasena
+                    contrasena: this.contrasena,
+                    tipo_usuario: this.tipoUsuario
                 });
-                localStorage.setItem('token', res.data.token);
-                localStorage.setItem('id_usuario', res.data.usuario.id_usuario); // Almacenar id_usuario
-                localStorage.setItem('nombre', res.data.usuario.nombre);
-                // Si el usuario es proveedor/prestador, guardar también id_proveedor para compatibilidad
-                if (res.data.usuario.tipo_usuario === 'proveedor' || res.data.usuario.tipo_usuario === 'prestador') {
-                    localStorage.setItem('id_proveedor', res.data.usuario.id_usuario);
+
+                // DEBUG: Ver estructura completa de la respuesta
+                console.log('📦 Respuesta completa:', res);
+                console.log('👤 Datos usuario:', res.data.usuario);
+                console.log('🎫 Token:', res.data.token);
+
+                if (!res.data.usuario || !res.data.token) {
+                    throw new Error('Respuesta del servidor incompleta');
                 }
-                // Redirigir según sea el tipo de usuario
-                const tipo = res.data.usuario?.tipo_usuario;
-                if (tipo === 'cliente') {
-                    this.$router.push('/servicios');
-                } else if (tipo === 'prestador' || tipo === 'proveedor') {
-                    this.$router.push('/dashboard');
-                } else {
-                    this.$router.push('/');
-                }
+
+                // Resto del código...
             } catch (err) {
-                this.mensaje = err.response?.data || 'Error al iniciar sesión';
+                console.error('💥 Error completo:', err);
+                this.mensaje = err.response?.data || err.message || 'Error al iniciar sesión';
             }
         }
     }

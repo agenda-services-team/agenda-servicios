@@ -5,12 +5,16 @@
 
     <!-- Para otras rutas, muestra Navbar, contenido y Footer -->
     <template v-else>
-      <Navbar v-if="$route.path !== '/login' && $route.path !== '/registro'" />
+      <!-- MOSTRAR NAVBAR SI NO ES RUTA DE AUTH (login/registro) -->
+      <Navbar v-if="!isAuthRoute" />
       <main
-        :class="{ 'main-content': !$route.path.startsWith('/dashboard'), 'no-padding': $route.path === '/login' || $route.path === '/registro' }">
+        :class="{ 
+          'main-content': !$route.path.startsWith('/dashboard'), 
+          'no-padding': $route.path === '/login' || $route.path === '/registro' 
+        }">
         <router-view />
       </main>
-      <Footer v-if="$route.path !== '/login' && $route.path !== '/registro'" />
+      <Footer v-if="!isAuthRoute" />
     </template>
   </div>
 </template>
@@ -19,7 +23,7 @@
 import Navbar from './components/Navbar.vue';
 import Footer from './components/Footer.vue';
 import { computed } from 'vue';
-import { useRoute } from 'vue-router'; // Importar useRoute
+import { useRoute } from 'vue-router';
 import { useAuthStore } from './store';
 
 export default {
@@ -28,11 +32,15 @@ export default {
   setup() {
     const store = useAuthStore();
     const route = useRoute();
-    const isAuth = computed(() => store.isAuthenticated);
-    const logout = () => {
-      store.logout();
+    
+    const isAuthRoute = computed(() => 
+      route.path === '/login' || route.path === '/registro'
+    );
+
+    return { 
+      route,
+      isAuthRoute
     };
-    return { isAuth, route };
   }
 }
 </script>
