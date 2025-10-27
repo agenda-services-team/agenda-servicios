@@ -75,6 +75,30 @@
                 </div>
             </div>
         </header>
+        <!-- 🆕 DETECTAR SI ESTAMOS EN RUTAS TEMPORALES -->
+        <div v-if="$route.name === 'mis-citas'" class="temporary-page">
+            <div class="temporary-content">
+                <div class="temporary-icon">📅</div>
+                <h1>Mis Citas</h1>
+                <p>Esta funcionalidad estará disponible pronto.</p>
+                <p>Mientras tanto, puedes explorar nuestros servicios.</p>
+                <button @click="$router.push('/servicios')" class="back-to-services">
+                    Explorar Servicios
+                </button>
+            </div>
+        </div>
+
+        <div v-else-if="$route.name === 'perfil'" class="temporary-page">
+            <div class="temporary-content">
+                <div class="temporary-icon">👤</div>
+                <h1>Mi Perfil</h1>
+                <p>Esta funcionalidad estará disponible pronto.</p>
+                <p>Pronto podrás editar tu información personal.</p>
+                <button @click="$router.push('/servicios')" class="back-to-services">
+                    Volver a Servicios
+                </button>
+            </div>
+        </div>
 
         <!-- Contenido principal (sin cambios) -->
         <div class="services-content">
@@ -655,6 +679,63 @@ export default {
 
 .reserve-btn:hover {
     background: #553a6a;
+}
+
+/** otros*/
+
+.temporary-page {
+    min-height: 80vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem;
+}
+
+.temporary-content {
+    text-align: center;
+    max-width: 500px;
+    padding: 3rem 2rem;
+    background: white;
+    border-radius: 20px;
+    box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+}
+
+.temporary-icon {
+    font-size: 4rem;
+    margin-bottom: 1.5rem;
+}
+
+.temporary-content h1 {
+    font-size: 2.5rem;
+    font-weight: 800;
+    background: linear-gradient(135deg, #791236 0%, #553a6a 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    margin-bottom: 1rem;
+}
+
+.temporary-content p {
+    color: #666;
+    font-size: 1.1rem;
+    margin-bottom: 0.5rem;
+    line-height: 1.5;
+}
+
+.back-to-services {
+    background: #791236;
+    color: white;
+    border: none;
+    padding: 1rem 2rem;
+    border-radius: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    margin-top: 2rem;
+    transition: all 0.3s ease;
+}
+
+.back-to-services:hover {
+    background: #553a6a;
+    transform: translateY(-2px);
 }
 
 /* ========== RESPONSIVE ========== */

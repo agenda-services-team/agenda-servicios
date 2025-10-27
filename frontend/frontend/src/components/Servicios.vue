@@ -8,6 +8,7 @@
             <input v-model="nombre" placeholder="Nombre" />
             <input v-model="descripcion" placeholder="Descripción" />
             <input v-model.number="precio" type="number" placeholder="Precio" />
+            <input v-model.number="duracion" type="number" placeholder="Duración (minutos)" />
             <button @click="crearServicio">Crear</button>
             <p>{{ mensaje }}</p>
         </div>
@@ -54,29 +55,39 @@ export default {
         async listarServicios() {
             const token = localStorage.getItem('token');
             try {
-                const res = await axios.get('http://localhost:4000/servicios', {
+                // Para proveedores: obtener sus propios servicios
+                const res = await axios.get('http://localhost:4000/api/servicios/proveedor/mis-servicios', {
                     headers: { Authorization: `Bearer ${token}` }
                 });
                 this.servicios = res.data;
             } catch (err) {
-                this.mensaje = err.response?.data || 'Error al obtener servicios';
+                // Como fallback, intentar endpoint público
+                try {
+                    const resPublic = await axios.get('http://localhost:4000/api/servicios/public/todos');
+                    this.servicios = resPublic.data;
+                } catch (err2) {
+                    this.mensaje = err.response?.data || 'Error al obtener servicios';
+                }
             }
         },
         async crearServicio() {
             const token = localStorage.getItem('token');
             try {
+                // El endpoint backend espera campos como nombre_servicio, descripcion, precio, duracion
                 await axios.post(
-                    'http://localhost:4000/servicios',
-                    { nombre: this.nombre, descripcion: this.descripcion, precio: this.precio },
+                    'http://localhost:4000/api/servicios',
+                    { nombre_servicio: this.nombre, descripcion: this.descripcion, precio: this.precio, duracion: this.duracion },
                     { headers: { Authorization: `Bearer ${token}` } }
                 );
                 this.mensaje = 'Servicio creado';
                 this.nombre = '';
                 this.descripcion = '';
                 this.precio = 0;
+                this.duracion = 0;
                 this.listarServicios();
             } catch (err) {
-                this.mensaje = err.response?.data || 'Error al crear servicio';
+                // Mostrar mensaje de error más informativo
+                this.mensaje = err.response?.data?.error || err.response?.data || 'Error al crear servicio';
             }
         },
         async editarServicio(servicio) {
