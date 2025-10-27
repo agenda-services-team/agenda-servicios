@@ -1,17 +1,13 @@
+<!-- src/App.vue - VERSIÓN SIMPLIFICADA -->
 <template>
   <div id="app">
-    <!-- Renderiza directamente el router-view para rutas de dashboard -->
+    <!-- Dashboard usa su propio layout -->
     <router-view v-if="$route.path.startsWith('/dashboard')" />
 
     <!-- Para otras rutas, muestra Navbar, contenido y Footer -->
     <template v-else>
-      <!-- MOSTRAR NAVBAR SI NO ES RUTA DE AUTH (login/registro) -->
       <Navbar v-if="!isAuthRoute" />
-      <main
-        :class="{ 
-          'main-content': !$route.path.startsWith('/dashboard'), 
-          'no-padding': $route.path === '/login' || $route.path === '/registro' 
-        }">
+      <main :class="{ 'no-padding': isAuthRoute }">
         <router-view />
       </main>
       <Footer v-if="!isAuthRoute" />
@@ -24,13 +20,11 @@ import Navbar from './components/Navbar.vue';
 import Footer from './components/Footer.vue';
 import { computed } from 'vue';
 import { useRoute } from 'vue-router';
-import { useAuthStore } from './store';
 
 export default {
   name: "App",
   components: { Navbar, Footer },
   setup() {
-    const store = useAuthStore();
     const route = useRoute();
     
     const isAuthRoute = computed(() => 
@@ -47,16 +41,11 @@ export default {
 
 <style>
 #app {
-  font-family: Arial, sans-serif;
-  display: flex;
-  flex-direction: column;
+  width: 100%;
   min-height: 100vh;
-}
-
-.main-content {
-  flex: 1;
-  padding-top: 80px;
-  margin: 0 auto;
+  margin: 0;
+  padding: 0;
+  text-align: left;
 }
 
 .no-padding {

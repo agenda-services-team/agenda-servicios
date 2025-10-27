@@ -65,6 +65,7 @@ export default {
         }
     },
     methods: {
+        // En Login.vue - método login() COMPLETO
         async login() {
             try {
                 console.log('🔑 Credenciales:', {
@@ -78,8 +79,7 @@ export default {
                     tipo_usuario: this.tipoUsuario
                 });
 
-                // DEBUG: Ver estructura completa de la respuesta
-                console.log('📦 Respuesta completa:', res);
+                console.log('📦 Respuesta completa:', res.data);
                 console.log('👤 Datos usuario:', res.data.usuario);
                 console.log('🎫 Token:', res.data.token);
 
@@ -87,7 +87,15 @@ export default {
                     throw new Error('Respuesta del servidor incompleta');
                 }
 
-                // Resto del código...
+                // ✅ AGREGAR ESTO: Usar el store para login
+                const authStore = useAuthStore();
+                authStore.login(res.data.token, res.data.usuario);
+
+                console.log('✅ Login exitoso, redirigiendo...');
+
+                // ✅ AGREGAR ESTO: Redirección forzada a servicios
+                this.$router.push('/servicios');
+
             } catch (err) {
                 console.error('💥 Error completo:', err);
                 this.mensaje = err.response?.data || err.message || 'Error al iniciar sesión';

@@ -30,6 +30,17 @@
 import axios from 'axios';
 
 export default {
+    props: {
+        searchTerm: {
+            type: String,
+            default: ''
+        }
+    },
+    watch: {
+        searchTerm(newTerm) {
+            this.filtroBusqueda = newTerm;
+        }
+    },
     data() {
         return {
             servicios: [],
