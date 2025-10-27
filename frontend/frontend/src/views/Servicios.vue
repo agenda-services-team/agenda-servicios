@@ -217,7 +217,6 @@ export default {
     },
     async mounted() {
         await this.cargarServicios();
-        // Cerrar menú al hacer clic fuera
         document.addEventListener('click', this.handleClickOutside);
     },
     beforeUnmount() {
@@ -241,12 +240,56 @@ export default {
                 }
 
                 const data = await respuesta.json();
+                console.log('📦 Servicios cargados:', data); // Para debug
                 this.servicios = data;
             } catch (error) {
                 console.error('Error al cargar servicios:', error);
             } finally {
                 this.loading = false;
             }
+        },
+
+        // 🆕 MÉTODO MEJORADO PARA MANEJAR IMÁGENES
+        getImageUrl(imagePath) {
+            if (!imagePath) {
+                return this.getDefaultImage();
+            }
+            
+            // Si ya es una URL completa (http o https)
+            if (imagePath.startsWith('http')) {
+                return imagePath;
+            }
+            
+            // Si es una ruta local
+            if (imagePath.startsWith('/')) {
+                return imagePath;
+            }
+            
+            // Si es de Cloudinary (contiene 'upload' en la URL)
+            if (imagePath.includes('upload')) {
+                // Asegurar que sea URL completa de Cloudinary
+                if (!imagePath.startsWith('http')) {
+                    return `https://res.cloudinary.com/${imagePath}`;
+                }
+                return imagePath;
+            }
+            
+            // Por defecto
+            return this.getDefaultImage();
+        },
+
+        // 🆕 IMAGEN POR DEFECTO MEJORADA
+        getDefaultImage() {
+            // Usar imagen de placeholder online
+            return 'https://images.unsplash.com/photo-1560066984-138dadb4c035?w=400&h=300&fit=crop&auto=format';
+        },
+
+        // 🆕 MANEJO DE ERRORES MEJORADO
+        handleImageError(event) {
+            console.warn('❌ Error cargando imagen:', event.target.src);
+            event.target.src = this.getDefaultImage();
+            // Prevenir bucles de error
+            event.target.onerror = null;
         },
 
         getInitials(nombre) {
@@ -256,10 +299,6 @@ export default {
                 .join('')
                 .toUpperCase()
                 .substring(0, 2) || 'PR';
-        },
-
-        handleImageError(event) {
-            event.target.src = '/src/images/default-service.jpg';
         },
 
         verDetalleServicio(servicio) {
@@ -272,6 +311,8 @@ export default {
 
         reservarServicio(servicio) {
             console.log('Reservar servicio:', servicio);
+            // 🆕 Redirigir al detalle para reservar
+            this.verDetalleServicio(servicio);
         },
 
         toggleUserMenu() {
