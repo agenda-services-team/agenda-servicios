@@ -37,6 +37,74 @@ const soloProveedores = (req, res, next) => {
 
 // ========== ENDPOINTS PÚBLICOS ==========
 
+// 🆕 ENDPOINT DE DETALLE - DEBE IR PRIMERO
+router.get("/detalle/:id", async (req, res) => {
+    try {
+        const { id } = req.params;
+        console.log(`🔍 Buscando detalle del servicio ID: ${id}`);
+        
+        const { data, error } = await supabase
+            .from("servicios")
+            .select(`
+                *,
+                emprendimientos (
+                    nombre_negocio,
+                    descripcion,
+                    telefono,
+                    direccion,
+                    horario_atencion,
+                    usuarios (
+                        nombre,
+                        telefono,
+                        correo
+                    )
+                )
+            `)
+            .eq("id_servicio", id)
+            .single();
+
+        if (error || !data) {
+            console.error("❌ Servicio no encontrado:", error);
+            return res.status(404).json({ 
+                error: "Servicio no encontrado" 
+            });
+        }
+
+        // Formatear respuesta para el frontend
+        const servicio = {
+            id_servicio: data.id_servicio,
+            nombre: data.nombre_servicio,
+            descripcion: data.descripcion,
+            precio: data.precio,
+            duracion: data.duracion,
+            imagen_referencia: data.imagen_referencia,
+            // Información del emprendimiento
+            emprendimiento: {
+                nombre: data.emprendimientos?.nombre_negocio || "Sin nombre",
+                descripcion: data.emprendimientos?.descripcion,
+                telefono: data.emprendimientos?.telefono,
+                direccion: data.emprendimientos?.direccion,
+                horario: data.emprendimientos?.horario_atencion
+            },
+            // Información del proveedor
+            proveedor: {
+                nombre: data.emprendimientos?.usuarios?.nombre || "Desconocido",
+                telefono: data.emprendimientos?.usuarios?.telefono,
+                email: data.emprendimientos?.usuarios?.correo
+            }
+        };
+
+        console.log(`✅ Detalles del servicio ${id} cargados`);
+        res.json(servicio);
+
+    } catch (error) {
+        console.error("💥 Error al obtener detalle del servicio:", error.message);
+        res.status(500).json({ 
+            error: "Error al obtener detalle del servicio: " + error.message 
+        });
+    }
+});
+
 // Obtener TODOS los servicios para clientes
 router.get("/public/todos", async (req, res) => {
     try {
@@ -142,77 +210,9 @@ router.get("/public/cliente", async (req, res) => {
     }
 });
 
-// 🆕 ENDPOINT DE DETALLE MEJORADO
-// 🆕 ENDPOINT PARA DETALLE DE SERVICIO - AGREGAR ESTO
-router.get("/detalle/:id", async (req, res) => {
-    try {
-        const { id } = req.params;
-        console.log(`🔍 Buscando detalle del servicio ID: ${id}`);
-        
-        const { data, error } = await supabase
-            .from("servicios")
-            .select(`
-                *,
-                emprendimientos (
-                    nombre_negocio,
-                    descripcion,
-                    telefono,
-                    direccion,
-                    horario_atencion,
-                    usuarios (
-                        nombre,
-                        telefono,
-                        correo
-                    )
-                )
-            `)
-            .eq("id_servicio", id)
-            .single();
-
-        if (error || !data) {
-            console.error("❌ Servicio no encontrado:", error);
-            return res.status(404).json({ 
-                error: "Servicio no encontrado" 
-            });
-        }
-
-        // Formatear respuesta para el frontend
-        const servicio = {
-            id_servicio: data.id_servicio,
-            nombre: data.nombre_servicio,
-            descripcion: data.descripcion,
-            precio: data.precio,
-            duracion: data.duracion,
-            imagen_referencia: data.imagen_referencia,
-            // Información del emprendimiento
-            emprendimiento: {
-                nombre: data.emprendimientos?.nombre_negocio || "Sin nombre",
-                descripcion: data.emprendimientos?.descripcion,
-                telefono: data.emprendimientos?.telefono,
-                direccion: data.emprendimientos?.direccion,
-                horario: data.emprendimientos?.horario_atencion
-            },
-            // Información del proveedor
-            proveedor: {
-                nombre: data.emprendimientos?.usuarios?.nombre || "Desconocido",
-                telefono: data.emprendimientos?.usuarios?.telefono,
-                email: data.emprendimientos?.usuarios?.correo
-            }
-        };
-
-        console.log(`✅ Detalles del servicio ${id} cargados`);
-        res.json(servicio);
-
-    } catch (error) {
-        console.error("💥 Error al obtener detalle del servicio:", error.message);
-        res.status(500).json({ 
-            error: "Error al obtener detalle del servicio: " + error.message 
-        });
-    }
-});
 // ========== ENDPOINTS DE PROVEEDOR ==========
 
-// 🆕 CREAR SERVICIO (FALTABA ESTE ENDPOINT)
+// Crear servicio
 router.post("/", autenticar, soloProveedores, upload.single("imagen"), async (req, res) => {
     try {
         const { nombre_servicio, descripcion, precio, duracion } = req.body;
@@ -370,99 +370,7 @@ router.get("/proveedor/mis-servicios", autenticar, soloProveedores, async (req, 
     }
 });
 
-// Obtener todos los servicios del proveedor (alias de /proveedor/mis-servicios)
-router.get("/", autenticar, soloProveedores, async (req, res) => {
-    try {
-        const { data, error } = await supabase
-            .from("servicios")
-            .select(`
-                *,
-                emprendimientos (
-                    id_emprendimiento,
-                    nombre_negocio,
-                    usuarios (
-                        id_usuario,
-                        nombre
-                    )
-                )
-            `)
-            .eq('id_emprendimiento', req.usuario.id_emprendimiento)
-            .order("id_servicio", { ascending: true });
-
-        if (error) throw error;
-
-        const servicios = data.map((s) => ({
-            id_servicio: s.id_servicio,
-            id_emprendimiento: s.id_emprendimiento,
-            nombre: s.nombre_servicio,
-            descripcion: s.descripcion,
-            precio: s.precio,
-            duracion: s.duracion,
-            nombre_emprendimiento: s.emprendimientos?.nombre_negocio || "Sin nombre",
-            id_usuario: s.emprendimientos?.usuarios?.id_usuario || null,
-            nombre_proveedor: s.emprendimientos?.usuarios?.nombre || "Desconocido",
-            imagen_referencia: s.imagen_referencia
-        }));
-
-        res.json(servicios);
-    } catch (error) {
-        console.error("Error al obtener servicios:", error.message);
-        res.status(500).json({ 
-            error: "Error al obtener servicios" 
-        });
-    }
-});
-
-// Obtener servicio por ID (para proveedores)
-router.get("/:id", autenticar, soloProveedores, async (req, res) => {
-    try {
-        const { id } = req.params;
-
-        const { data, error } = await supabase
-            .from("servicios")
-            .select(`
-                *,
-                emprendimientos (
-                    id_emprendimiento,
-                    nombre_negocio,
-                    usuarios (
-                        id_usuario,
-                        nombre
-                    )
-                )
-            `)
-            .eq("id_servicio", id)
-            .eq("id_emprendimiento", req.usuario.id_emprendimiento)
-            .single();
-
-        if (error || !data) {
-            return res.status(404).json({ 
-                error: "Servicio no encontrado" 
-            });
-        }
-
-        const servicio = {
-            id_servicio: data.id_servicio,
-            nombre: data.nombre_servicio,
-            descripcion: data.descripcion,
-            precio: data.precio,
-            duracion: data.duracion,
-            id_emprendimiento: data.id_emprendimiento,
-            nombre_emprendimiento: data.emprendimientos?.nombre_negocio || "Sin nombre",
-            nombre_proveedor: data.emprendimientos?.usuarios?.nombre || "Desconocido",
-            imagen_referencia: data.imagen_referencia
-        };
-
-        res.json(servicio);
-    } catch (error) {
-        console.error("Error al obtener servicio por ID:", error.message);
-        res.status(500).json({ 
-            error: "Error al obtener servicio por ID" 
-        });
-    }
-});
-
-// 🆕 ACTUALIZAR SERVICIO CORREGIDO
+// Actualizar servicio
 router.put("/:id", autenticar, soloProveedores, upload.single("imagen"), async (req, res) => {
     try {
         const { id } = req.params;
@@ -519,7 +427,7 @@ router.put("/:id", autenticar, soloProveedores, upload.single("imagen"), async (
 
                 imagen_referencia = result.secure_url;
                 
-                // 🆕 Eliminar imagen anterior de Cloudinary si existe
+                // Eliminar imagen anterior de Cloudinary si existe
                 if (servicioExistente.imagen_referencia) {
                     try {
                         const publicId = servicioExistente.imagen_referencia.split('/').pop().split('.')[0];
@@ -638,6 +546,55 @@ router.delete("/:id", autenticar, soloProveedores, async (req, res) => {
         console.error("Error al eliminar servicio:", error.message);
         res.status(500).json({ 
             error: "Error al eliminar servicio: " + error.message 
+        });
+    }
+});
+
+// Obtener servicio por ID (para proveedores) - DEBE IR AL FINAL
+router.get("/:id", autenticar, soloProveedores, async (req, res) => {
+    try {
+        const { id } = req.params;
+
+        const { data, error } = await supabase
+            .from("servicios")
+            .select(`
+                *,
+                emprendimientos (
+                    id_emprendimiento,
+                    nombre_negocio,
+                    usuarios (
+                        id_usuario,
+                        nombre
+                    )
+                )
+            `)
+            .eq("id_servicio", id)
+            .eq("id_emprendimiento", req.usuario.id_emprendimiento)
+            .single();
+
+        if (error || !data) {
+            return res.status(404).json({ 
+                error: "Servicio no encontrado" 
+            });
+        }
+
+        const servicio = {
+            id_servicio: data.id_servicio,
+            nombre: data.nombre_servicio,
+            descripcion: data.descripcion,
+            precio: data.precio,
+            duracion: data.duracion,
+            id_emprendimiento: data.id_emprendimiento,
+            nombre_emprendimiento: data.emprendimientos?.nombre_negocio || "Sin nombre",
+            nombre_proveedor: data.emprendimientos?.usuarios?.nombre || "Desconocido",
+            imagen_referencia: data.imagen_referencia
+        };
+
+        res.json(servicio);
+    } catch (error) {
+        console.error("Error al obtener servicio por ID:", error.message);
+        res.status(500).json({ 
+            error: "Error al obtener servicio por ID" 
         });
     }
 });

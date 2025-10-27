@@ -8,6 +8,7 @@ import Inicio from '../views/Inicio.vue';
 import Agenda from '../views/Agenda.vue';
 import RegistrarEmprendimiento from '../components/RegisterEmpre.vue';
 import DetalleServicio from '../views/DetalleServicio.vue';
+import PerfilUsuario from '../views/PerfilUsuario.vue'; // ✅ CORREGIDO
 import { useAuthStore } from '../store';
 import axios from 'axios';
 
@@ -37,22 +38,24 @@ const routes = [
         name: 'servicio-detalle',
         component: DetalleServicio 
     },
-    // 🆕 RUTAS TEMPORALES PARA EVITAR ERRORES
-    { 
-        path: '/mis-citas',
-        name: 'mis-citas',
-        component: Servicios, // ✅ Usar componente existente temporalmente
-        meta: { title: 'Mis Citas - Próximamente' }
-    },
+    // 🆕 RUTA DE PERFIL REAL
     { 
         path: '/perfil',
         name: 'perfil', 
-        component: Servicios, // ✅ Usar componente existente temporalmente
-        meta: { title: 'Mi Perfil - Próximamente' }
+        component: PerfilUsuario, // ✅ AHORA USA EL COMPONENTE REAL
+        meta: { title: 'Mi Perfil', requiresAuth: true }
+    },
+    // RUTA TEMPORAL PARA CITAS
+    { 
+        path: '/mis-citas',
+        name: 'mis-citas',
+        component: Servicios, // ✅ Temporalmente
+        meta: { title: 'Mis Citas - Próximamente', requiresAuth: true }
     },
     {
         path: '/dashboard',
         component: Dashboard,
+        meta: { requiresAuth: true }, // ✅ Proteger todo el dashboard
         children: [
             { 
                 path: '', 

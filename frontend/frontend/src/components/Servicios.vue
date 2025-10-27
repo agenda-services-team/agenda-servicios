@@ -5,11 +5,11 @@
         <!-- Formulario crear servicio -->
         <div>
             <h3>Crear Servicio</h3>
-            <input v-model="nombre" placeholder="Nombre" />
+            <input v-model="nombre_servicio" placeholder="Nombre del servicio" />
             <input v-model="descripcion" placeholder="Descripción" />
             <input v-model.number="precio" type="number" placeholder="Precio" />
             <input v-model.number="duracion" type="number" placeholder="Duración (minutos)" />
-            <button @click="crearServicio">Crear</button>
+            <button @click="crearServicio">Crear Servicio</button>
             <p>{{ mensaje }}</p>
         </div>
 
@@ -45,9 +45,10 @@ export default {
     data() {
         return {
             servicios: [],
-            nombre: '',
+            nombre_servicio: '',  // Cambio de nombre a nombre_servicio para match con backend
             descripcion: '',
             precio: 0,
+            duracion: 0,  // Añadido campo duracion
             mensaje: ''
         };
     },
@@ -55,19 +56,27 @@ export default {
         async listarServicios() {
             const token = localStorage.getItem('token');
             try {
-                // Para proveedores: obtener sus propios servicios
-                const res = await axios.get('http://localhost:4000/api/servicios/proveedor/mis-servicios', {
-                    headers: { Authorization: `Bearer ${token}` }
-                });
-                this.servicios = res.data;
-            } catch (err) {
-                // Como fallback, intentar endpoint público
-                try {
-                    const resPublic = await axios.get('http://localhost:4000/api/servicios/public/todos');
-                    this.servicios = resPublic.data;
-                } catch (err2) {
-                    this.mensaje = err.response?.data || 'Error al obtener servicios';
+                // Primero intentamos obtener los servicios como proveedor
+                if (token) {
+                    try {
+                        const res = await axios.get('http://localhost:4000/api/servicios/proveedor/mis-servicios', {
+                            headers: { Authorization: `Bearer ${token}` }
+                        });
+                        console.log('✅ Servicios del proveedor cargados:', res.data);
+                        this.servicios = res.data;
+                        return;
+                    } catch (err) {
+                        console.log('No es proveedor o token inválido, intentando endpoint público');
+                    }
                 }
+
+                // Si no hay token o no es proveedor, usar endpoint público
+                const resPublic = await axios.get('http://localhost:4000/api/servicios/public/todos');
+                console.log('✅ Servicios públicos cargados:', resPublic.data);
+                this.servicios = resPublic.data;
+            } catch (err) {
+                console.error('❌ Error al cargar servicios:', err);
+                this.mensaje = err.response?.data?.error || err.response?.data || 'Error al obtener servicios';
             }
         },
         async crearServicio() {

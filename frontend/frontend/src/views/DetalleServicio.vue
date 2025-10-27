@@ -143,6 +143,77 @@
             <p>{{ errorMessage }}</p>
             <button class="retry-btn" @click="cargarServicio">Reintentar</button>
         </div>
+
+        <!-- Modal de Reserva -->
+        <div class="modal" v-if="showModalCita" @click="cerrarModal">
+            <div class="modal-content" @click.stop>
+                <h2>Agendar Cita</h2>
+                <h3>{{ servicio?.nombre }}</h3>
+                
+                <form @submit.prevent="reservarCita" class="reservation-form">
+                    <div class="form-group">
+                        <label for="fecha">Fecha</label>
+                        <input 
+                            type="date" 
+                            id="fecha" 
+                            v-model="citaForm.fecha"
+                            :min="fechaMinima"
+                            required
+                            @change="cargarHorariosDisponibles"
+                        >
+                    </div>
+
+                    <div class="form-group">
+                        <label for="hora">Hora</label>
+                        <select 
+                            id="hora" 
+                            v-model="citaForm.hora"
+                            required
+                            :disabled="!horariosDisponibles.length || loadingHorarios"
+                        >
+                            <option value="">Selecciona un horario</option>
+                            <option 
+                                v-for="horario in horariosDisponibles" 
+                                :key="horario"
+                                :value="horario"
+                            >
+                                {{ horario }}
+                            </option>
+                        </select>
+                        <span v-if="loadingHorarios" class="loading-text">Cargando horarios...</span>
+                        <span v-if="errorHorarios" class="error-text">{{ errorHorarios }}</span>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="mensaje">Mensaje (opcional)</label>
+                        <textarea 
+                            id="mensaje" 
+                            v-model="citaForm.mensaje"
+                            rows="3"
+                            placeholder="Agrega cualquier detalle o petición especial..."
+                        ></textarea>
+                    </div>
+
+                    <div class="reservation-summary">
+                        <div class="summary-item">
+                            <span>Duración:</span>
+                            <strong>{{ servicio?.duracion }} minutos</strong>
+                        </div>
+                        <div class="summary-item">
+                            <span>Precio:</span>
+                            <strong>${{ servicio?.precio }} MXN</strong>
+                        </div>
+                    </div>
+
+                    <div class="form-actions">
+                        <button type="button" class="btn-cancelar" @click="cerrarModal">Cancelar</button>
+                        <button type="submit" class="btn-confirmar" :disabled="loadingHorarios">
+                            Confirmar Reserva
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
     </div>
 </template>
 
@@ -157,7 +228,16 @@ export default {
             servicio: null,
             loading: true,
             error: false,
-            errorMessage: ''
+            errorMessage: '',
+            showModalCita: false,
+            citaForm: {
+                fecha: '',
+                hora: '',
+                mensaje: ''
+            },
+            horariosDisponibles: [],
+            loadingHorarios: false,
+            errorHorarios: null
         }
     },
     computed: {
@@ -168,50 +248,50 @@ export default {
     },
     methods: {
         async cargarServicio() {
-            this.loading = true;
-            this.error = false;
-            this.errorMessage = '';
-            
-            try {
-                const servicioId = this.$route.params.id;
-                console.log('🔄 Cargando servicio ID:', servicioId);
-                
-                // 🔥 CONEXIÓN REAL CON EL BACKEND
-                const response = await fetch(`http://localhost:4000/api/servicios/detalle/${servicioId}`);
-                
-                if (!response.ok) {
-                    throw new Error(`Error ${response.status}: ${response.statusText}`);
-                }
-                
-                const servicioData = await response.json();
-                console.log('✅ Servicio cargado:', servicioData);
-                
-                // Transformar datos para consistencia con Servicios.vue
-                this.servicio = {
-                    id_servicio: servicioData.id_servicio,
-                    nombre: servicioData.nombre,
-                    descripcion: servicioData.descripcion,
-                    precio: servicioData.precio,
-                    duracion: servicioData.duracion,
-                    imagen_referencia: servicioData.imagen_referencia,
-                    nombre_proveedor: servicioData.proveedor?.nombre || 'Proveedor',
-                    nombre_emprendimiento: servicioData.emprendimiento?.nombre || 'Emprendimiento'
-                };
-                
-            } catch (error) {
-                console.error('❌ Error cargando servicio:', error);
-                this.error = true;
-                this.errorMessage = error.message;
-                
-                // 🔥 TEMPORAL: Si el endpoint no existe, usar datos de ejemplo
-                if (error.message.includes('404') || error.message.includes('Failed to fetch')) {
-                    console.log('⚠️ Usando datos de ejemplo temporalmente');
-                    await this.cargarServicioEjemplo();
-                }
-            } finally {
-                this.loading = false;
-            }
-        },
+    this.loading = true;
+    this.error = false;
+    this.errorMessage = '';
+    
+    try {
+        const servicioId = this.$route.params.id;
+        console.log('🔄 Cargando servicio ID:', servicioId);
+        
+        // 🔥 AHORA ESTE ENDPOINT DEBERÍA FUNCIONAR
+        const response = await fetch(`http://localhost:4000/api/servicios/detalle/${servicioId}`);
+        
+        if (!response.ok) {
+            throw new Error(`Error ${response.status}: ${response.statusText}`);
+        }
+        
+        // 🔥 RECIBIMOS UN OBJETO INDIVIDUAL
+        const servicioData = await response.json();
+        console.log('✅ Servicio cargado:', servicioData);
+        
+        // Transformar datos
+        this.servicio = {
+            id_servicio: servicioData.id_servicio,
+            nombre: servicioData.nombre,
+            descripcion: servicioData.descripcion,
+            precio: servicioData.precio,
+            duracion: servicioData.duracion,
+            imagen_referencia: servicioData.imagen_referencia,
+            nombre_proveedor: servicioData.proveedor?.nombre || 'Proveedor',
+            nombre_emprendimiento: servicioData.emprendimiento?.nombre || 'Emprendimiento',
+            emprendimiento: servicioData.emprendimiento,
+            proveedor: servicioData.proveedor
+        };
+        
+    } catch (error) {
+        console.error('❌ Error cargando servicio:', error);
+        this.error = true;
+        this.errorMessage = error.message;
+        
+        // Fallback temporal
+        await this.cargarServicioEjemplo();
+    } finally {
+        this.loading = false;
+    }
+},
 
         // 🆕 Método temporal para datos de ejemplo
         async cargarServicioEjemplo() {
@@ -288,8 +368,101 @@ export default {
 
         iniciarReserva() {
             if (!this.servicio) return;
-            
-            alert(`Iniciando reserva para: ${this.servicio.nombre}\n\nEsta funcionalidad estará disponible pronto.`);
+            this.showModalCita = true;
+            this.citaForm = {
+                fecha: '',
+                hora: '',
+                mensaje: ''
+            };
+        },
+
+        cerrarModal() {
+            this.showModalCita = false;
+            this.errorHorarios = null;
+        },
+
+        async cargarHorariosDisponibles() {
+            if (!this.citaForm.fecha) return;
+
+            this.loadingHorarios = true;
+            this.errorHorarios = null;
+            this.horariosDisponibles = [];
+
+            try {
+                // Obtener citas existentes para este servicio en la fecha seleccionada
+                const response = await fetch(`http://localhost:4000/api/citas/disponibilidad/${this.servicio.id_servicio}/${this.citaForm.fecha}`);
+                
+                if (!response.ok) {
+                    throw new Error('Error al cargar horarios disponibles');
+                }
+
+                const citasOcupadas = await response.json();
+                
+                // Generar horarios disponibles (8:00 AM a 8:00 PM)
+                const horarios = [];
+                for (let hora = 8; hora < 20; hora++) {
+                    const horaStr = `${hora.toString().padStart(2, '0')}:00`;
+                    if (!citasOcupadas.includes(horaStr)) {
+                        horarios.push(horaStr);
+                    }
+                }
+
+                this.horariosDisponibles = horarios;
+                
+                if (horarios.length === 0) {
+                    this.errorHorarios = 'No hay horarios disponibles para esta fecha';
+                }
+
+            } catch (error) {
+                console.error('Error al cargar horarios:', error);
+                this.errorHorarios = 'Error al cargar los horarios disponibles';
+                
+                // Temporalmente, mientras se implementa el endpoint:
+                this.horariosDisponibles = [
+                    '09:00', '10:00', '11:00', '12:00',
+                    '15:00', '16:00', '17:00', '18:00'
+                ];
+            } finally {
+                this.loadingHorarios = false;
+            }
+        },
+
+        async reservarCita() {
+            if (!this.servicio || !this.citaForm.fecha || !this.citaForm.hora) return;
+
+            try {
+                const response = await fetch('http://localhost:4000/api/citas', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${localStorage.getItem('token')}`
+                    },
+                    body: JSON.stringify({
+                        id_servicio: this.servicio.id_servicio,
+                        fecha: this.citaForm.fecha,
+                        hora: this.citaForm.hora,
+                        mensaje: this.citaForm.mensaje
+                    })
+                });
+
+                if (!response.ok) {
+                    const error = await response.text();
+                    throw new Error(error || 'Error al crear la cita');
+                }
+
+                const cita = await response.json();
+                this.showModalCita = false;
+                
+                // Redireccionar a la página de citas del usuario
+                this.$router.push({
+                    path: '/mis-citas',
+                    query: { success: 'true', message: '¡Cita agendada correctamente!' }
+                });
+
+            } catch (error) {
+                console.error('Error al reservar cita:', error);
+                alert(error.message || 'Error al reservar la cita. Por favor, intenta de nuevo.');
+            }
         }
     },
     watch: {
@@ -705,6 +878,152 @@ export default {
 @keyframes spin {
     0% { transform: rotate(0deg); }
     100% { transform: rotate(360deg); }
+}
+
+/* ========== MODAL DE RESERVA ========== */
+.modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    padding: 1rem;
+}
+
+.modal-content {
+    background: white;
+    border-radius: 20px;
+    padding: 2rem;
+    width: 100%;
+    max-width: 500px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+    max-height: 90vh;
+    overflow-y: auto;
+}
+
+.modal-content h2 {
+    color: var(--text);
+    margin: 0 0 0.5rem;
+    font-size: 1.5rem;
+}
+
+.modal-content h3 {
+    color: var(--primary);
+    margin: 0 0 1.5rem;
+    font-size: 1.2rem;
+}
+
+.reservation-form {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+.form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.form-group label {
+    font-weight: 600;
+    color: var(--text);
+}
+
+.form-group input,
+.form-group select,
+.form-group textarea {
+    padding: 0.75rem;
+    border: 2px solid var(--border);
+    border-radius: 10px;
+    font-size: 1rem;
+    transition: all 0.3s ease;
+}
+
+.form-group input:focus,
+.form-group select:focus,
+.form-group textarea:focus {
+    outline: none;
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px var(--shadow);
+}
+
+.form-group textarea {
+    resize: vertical;
+    min-height: 100px;
+}
+
+.loading-text {
+    color: var(--text-light);
+    font-size: 0.9rem;
+    font-style: italic;
+}
+
+.error-text {
+    color: #e53e3e;
+    font-size: 0.9rem;
+}
+
+.reservation-summary {
+    background: var(--background);
+    padding: 1rem;
+    border-radius: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.summary-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 0.95rem;
+}
+
+.form-actions {
+    display: flex;
+    gap: 1rem;
+    margin-top: 1rem;
+}
+
+.btn-cancelar,
+.btn-confirmar {
+    flex: 1;
+    padding: 1rem;
+    border-radius: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.btn-cancelar {
+    background: none;
+    border: 2px solid var(--border);
+    color: var(--text);
+}
+
+.btn-confirmar {
+    background: var(--primary);
+    border: none;
+    color: white;
+}
+
+.btn-cancelar:hover {
+    background: var(--border);
+}
+
+.btn-confirmar:hover {
+    background: var(--primary-light);
+}
+
+.btn-confirmar:disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
 }
 
 /* ========== RESPONSIVE ========== */
