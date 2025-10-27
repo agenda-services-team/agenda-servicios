@@ -14,7 +14,9 @@
                 <div class="header-actions">
                     <button class="favorite-btn">
                         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                            <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
+                            <path
+                                d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z">
+                            </path>
                         </svg>
                     </button>
                 </div>
@@ -26,12 +28,8 @@
             <!-- Galería de imágenes -->
             <div class="service-gallery">
                 <div class="main-image">
-                    <img 
-                        :src="getImageUrl(servicio.imagen_referencia)" 
-                        :alt="servicio.nombre"
-                        @error="handleImageError"
-                        class="service-image"
-                    />
+                    <img :src="getImageUrl(servicio.imagen_referencia)" :alt="servicio.nombre" @error="handleImageError"
+                        class="service-image" />
                 </div>
                 <!-- Mini galería -->
                 <div class="image-thumbnails" v-if="servicio.imagen_referencia">
@@ -64,7 +62,7 @@
                         </svg>
                         <span><strong>Duración:</strong> {{ servicio.duracion }} minutos</span>
                     </div>
-                    
+
                     <div class="detail-item">
                         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor">
                             <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
@@ -96,7 +94,9 @@
                         </div>
                         <button class="contact-btn">
                             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                                <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path>
+                                <path
+                                    d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z">
+                                </path>
                             </svg>
                             Contactar
                         </button>
@@ -114,19 +114,13 @@
         </div>
 
         <!-- Barra de acciones fija -->
-        <div class="action-bar" v-if="servicio">
+        <div class="action-bar-debug" v-if="servicio">
             <div class="price-display">
-                <span class="price">${{ servicio.precio }}</span>
-                <span class="price-note">por servicio</span>
+                <span class="price" style="color: white; font-size: 24px;">${{ servicio.precio }}</span>
+                <span class="price-note" style="color: white; display: block;">por servicio</span>
             </div>
-            <button class="reserve-btn" @click="iniciarReserva">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                    <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
-                    <line x1="16" y1="2" x2="16" y2="6"></line>
-                    <line x1="8" y1="2" x2="8" y2="6"></line>
-                    <line x1="3" y1="10" x2="21" y2="10"></line>
-                </svg>
-                Reservar Ahora
+            <button class="reserve-btn-debug" @click="iniciarReserva">
+                📅 RESERVAR AHORA
             </button>
         </div>
 
@@ -149,34 +143,20 @@
             <div class="modal-content" @click.stop>
                 <h2>Agendar Cita</h2>
                 <h3>{{ servicio?.nombre }}</h3>
-                
+
                 <form @submit.prevent="reservarCita" class="reservation-form">
                     <div class="form-group">
                         <label for="fecha">Fecha</label>
-                        <input 
-                            type="date" 
-                            id="fecha" 
-                            v-model="citaForm.fecha"
-                            :min="fechaMinima"
-                            required
-                            @change="cargarHorariosDisponibles"
-                        >
+                        <input type="date" id="fecha" v-model="citaForm.fecha" :min="fechaMinima" required
+                            @change="cargarHorariosDisponibles">
                     </div>
 
                     <div class="form-group">
                         <label for="hora">Hora</label>
-                        <select 
-                            id="hora" 
-                            v-model="citaForm.hora"
-                            required
-                            :disabled="!horariosDisponibles.length || loadingHorarios"
-                        >
+                        <select id="hora" v-model="citaForm.hora" required
+                            :disabled="!horariosDisponibles.length || loadingHorarios">
                             <option value="">Selecciona un horario</option>
-                            <option 
-                                v-for="horario in horariosDisponibles" 
-                                :key="horario"
-                                :value="horario"
-                            >
+                            <option v-for="horario in horariosDisponibles" :key="horario" :value="horario">
                                 {{ horario }}
                             </option>
                         </select>
@@ -186,12 +166,8 @@
 
                     <div class="form-group">
                         <label for="mensaje">Mensaje (opcional)</label>
-                        <textarea 
-                            id="mensaje" 
-                            v-model="citaForm.mensaje"
-                            rows="3"
-                            placeholder="Agrega cualquier detalle o petición especial..."
-                        ></textarea>
+                        <textarea id="mensaje" v-model="citaForm.mensaje" rows="3"
+                            placeholder="Agrega cualquier detalle o petición especial..."></textarea>
                     </div>
 
                     <div class="reservation-summary">
@@ -248,50 +224,62 @@ export default {
     },
     methods: {
         async cargarServicio() {
-    this.loading = true;
-    this.error = false;
-    this.errorMessage = '';
-    
-    try {
-        const servicioId = this.$route.params.id;
-        console.log('🔄 Cargando servicio ID:', servicioId);
-        
-        // 🔥 AHORA ESTE ENDPOINT DEBERÍA FUNCIONAR
-        const response = await fetch(`http://localhost:4000/api/servicios/detalle/${servicioId}`);
-        
-        if (!response.ok) {
-            throw new Error(`Error ${response.status}: ${response.statusText}`);
-        }
-        
-        // 🔥 RECIBIMOS UN OBJETO INDIVIDUAL
-        const servicioData = await response.json();
-        console.log('✅ Servicio cargado:', servicioData);
-        
-        // Transformar datos
-        this.servicio = {
-            id_servicio: servicioData.id_servicio,
-            nombre: servicioData.nombre,
-            descripcion: servicioData.descripcion,
-            precio: servicioData.precio,
-            duracion: servicioData.duracion,
-            imagen_referencia: servicioData.imagen_referencia,
-            nombre_proveedor: servicioData.proveedor?.nombre || 'Proveedor',
-            nombre_emprendimiento: servicioData.emprendimiento?.nombre || 'Emprendimiento',
-            emprendimiento: servicioData.emprendimiento,
-            proveedor: servicioData.proveedor
-        };
-        
-    } catch (error) {
-        console.error('❌ Error cargando servicio:', error);
-        this.error = true;
-        this.errorMessage = error.message;
-        
-        // Fallback temporal
-        await this.cargarServicioEjemplo();
-    } finally {
-        this.loading = false;
-    }
-},
+            this.loading = true;
+            this.error = false;
+            this.errorMessage = '';
+
+            try {
+                const servicioId = this.$route.params.id;
+                console.log('🔄 Cargando servicio ID:', servicioId);
+
+                const response = await fetch(`http://localhost:4000/api/servicios/detalle/${servicioId}`);
+
+                if (!response.ok) {
+                    throw new Error(`Error ${response.status}: ${response.statusText}`);
+                }
+
+                const servicioData = await response.json();
+                console.log('✅ Servicio cargado:', servicioData);
+
+                // 🆕 LOG CRÍTICO - Verificar qué datos llegan
+                console.log('📊 Datos recibidos del servicio:', {
+                    id: servicioData.id_servicio,
+                    nombre: servicioData.nombre,
+                    precio: servicioData.precio,
+                    tieneImagen: !!servicioData.imagen_referencia
+                });
+
+                this.servicio = {
+                    id_servicio: servicioData.id_servicio,
+                    nombre: servicioData.nombre,
+                    descripcion: servicioData.descripcion,
+                    precio: servicioData.precio,
+                    duracion: servicioData.duracion,
+                    imagen_referencia: servicioData.imagen_referencia,
+                    nombre_proveedor: servicioData.proveedor?.nombre || 'Proveedor',
+                    nombre_emprendimiento: servicioData.emprendimiento?.nombre || 'Emprendimiento',
+                    emprendimiento: servicioData.emprendimiento,
+                    proveedor: servicioData.proveedor
+                };
+
+                // 🆕 LOG PARA VERIFICAR QUE EL SERVICIO SE ASIGNÓ
+                console.log('🎯 Servicio asignado a this.servicio:', this.servicio);
+
+            } catch (error) {
+                console.error('❌ Error cargando servicio:', error);
+                this.error = true;
+                this.errorMessage = error.message;
+                await this.cargarServicioEjemplo();
+            } finally {
+                this.loading = false;
+                // 🆕 LOG PARA VERIFICAR EL ESTADO FINAL
+                console.log('🏁 Estado final:', {
+                    loading: this.loading,
+                    error: this.error,
+                    servicio: this.servicio ? 'EXISTE' : 'NO EXISTE'
+                });
+            }
+        },
 
         // 🆕 Método temporal para datos de ejemplo
         async cargarServicioEjemplo() {
@@ -301,13 +289,13 @@ export default {
                 if (response.ok) {
                     const servicios = await response.json();
                     const servicioEncontrado = servicios.find(s => s.id_servicio == this.$route.params.id);
-                    
+
                     if (servicioEncontrado) {
                         this.servicio = servicioEncontrado;
                         return;
                     }
                 }
-                
+
                 // Si no encuentra, usar datos hardcodeados
                 this.servicio = {
                     id_servicio: this.$route.params.id,
@@ -319,7 +307,7 @@ export default {
                     nombre_proveedor: 'María González',
                     nombre_emprendimiento: 'Salón Belleza Oaxaqueña'
                 };
-                
+
             } catch (error) {
                 console.error('Error cargando servicio de ejemplo:', error);
                 this.errorMessage = 'No se pudo cargar el servicio. Verifica tu conexión.';
@@ -331,19 +319,19 @@ export default {
             if (!imagePath) {
                 return this.getDefaultImage();
             }
-            
+
             if (imagePath.startsWith('http')) {
                 return imagePath;
             }
-            
+
             if (imagePath.startsWith('/')) {
                 return imagePath;
             }
-            
+
             if (imagePath.includes('upload')) {
                 return `https://res.cloudinary.com/${imagePath}`;
             }
-            
+
             return this.getDefaultImage();
         },
 
@@ -391,13 +379,13 @@ export default {
             try {
                 // Obtener citas existentes para este servicio en la fecha seleccionada
                 const response = await fetch(`http://localhost:4000/api/citas/disponibilidad/${this.servicio.id_servicio}/${this.citaForm.fecha}`);
-                
+
                 if (!response.ok) {
                     throw new Error('Error al cargar horarios disponibles');
                 }
 
                 const citasOcupadas = await response.json();
-                
+
                 // Generar horarios disponibles (8:00 AM a 8:00 PM)
                 const horarios = [];
                 for (let hora = 8; hora < 20; hora++) {
@@ -408,7 +396,7 @@ export default {
                 }
 
                 this.horariosDisponibles = horarios;
-                
+
                 if (horarios.length === 0) {
                     this.errorHorarios = 'No hay horarios disponibles para esta fecha';
                 }
@@ -416,7 +404,7 @@ export default {
             } catch (error) {
                 console.error('Error al cargar horarios:', error);
                 this.errorHorarios = 'Error al cargar los horarios disponibles';
-                
+
                 // Temporalmente, mientras se implementa el endpoint:
                 this.horariosDisponibles = [
                     '09:00', '10:00', '11:00', '12:00',
@@ -452,7 +440,7 @@ export default {
 
                 const cita = await response.json();
                 this.showModalCita = false;
-                
+
                 // Redireccionar a la página de citas del usuario
                 this.$router.push({
                     path: '/mis-citas',
@@ -787,18 +775,49 @@ export default {
 }
 
 /* ========== ACTION BAR ========== */
+/* ========== ACTION BAR - ESTILOS CORREGIDOS ========== */
 .action-bar {
+    position: fixed !important;
+    bottom: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    background: var(--surface) !important;
+    box-shadow: 0 -4px 20px var(--shadow) !important;
+    padding: 1rem 2rem !important;
+    display: flex !important;
+    justify-content: space-between !important;
+    align-items: center !important;
+    z-index: 10000 !important;
+    /* 🆕 AUMENTADO */
+    border-top: 2px solid var(--primary) !important;
+    /* 🆕 Para hacerlo visible */
+}
+
+/* 🆕 ESTILOS DE EMERGENCIA TEMPORALES */
+.action-bar-debug {
     position: fixed;
     bottom: 0;
     left: 0;
     right: 0;
-    background: var(--surface);
-    box-shadow: 0 -4px 20px var(--shadow);
-    padding: 1rem 2rem;
+    background: #791236;
+    color: white;
+    padding: 20px;
     display: flex;
     justify-content: space-between;
     align-items: center;
-    z-index: 100;
+    z-index: 10000;
+    border: 3px solid red;
+}
+
+.reserve-btn-debug {
+    background: yellow;
+    color: black;
+    border: none;
+    padding: 15px 30px;
+    border-radius: 10px;
+    font-size: 18px;
+    font-weight: bold;
+    cursor: pointer;
 }
 
 .price-display {
@@ -876,8 +895,13 @@ export default {
 }
 
 @keyframes spin {
-    0% { transform: rotate(0deg); }
-    100% { transform: rotate(360deg); }
+    0% {
+        transform: rotate(0deg);
+    }
+
+    100% {
+        transform: rotate(360deg);
+    }
 }
 
 /* ========== MODAL DE RESERVA ========== */
@@ -1033,11 +1057,11 @@ export default {
         gap: 2rem;
         padding: 1.5rem;
     }
-    
+
     .service-title {
         font-size: 1.75rem;
     }
-    
+
     .service-price {
         font-size: 2rem;
     }
@@ -1047,28 +1071,28 @@ export default {
     .header-content {
         padding: 1rem;
     }
-    
+
     .detail-content {
         padding: 1rem;
     }
-    
+
     .provider-card {
         flex-direction: column;
         text-align: center;
     }
-    
+
     .provider-stats {
         justify-content: center;
     }
-    
+
     .action-bar {
         padding: 1rem;
     }
-    
+
     .price {
         font-size: 1.75rem;
     }
-    
+
     .reserve-btn {
         padding: 0.875rem 1.5rem;
         font-size: 1rem;
@@ -1079,11 +1103,11 @@ export default {
     .page-title {
         display: none;
     }
-    
+
     .service-title {
         font-size: 1.5rem;
     }
-    
+
     .service-price {
         font-size: 1.75rem;
     }

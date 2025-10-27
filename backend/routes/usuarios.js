@@ -5,7 +5,6 @@ import { supabase } from "../config/supabaseClient.js";
 import { autenticar } from "../middleware/auth.js";
 
 const router = express.Router();
-
 const JWT_SECRET = "mi_contraseña_secreta";
 
 // ========== ENDPOINTS PÚBLICOS ==========
@@ -80,7 +79,6 @@ router.post("/login", async (req, res) => {
             { expiresIn: "2h" }
         );
 
-        // Se modifica la respuesta para incluir datos del usuario
         res.json({ 
             token, 
             usuario: { 
@@ -101,7 +99,7 @@ router.post("/login", async (req, res) => {
 // ========== ENDPOINTS AUTENTICADOS ==========
 
 // 🆕 Obtener perfil de usuario
-router.get("/:id", autenticar, async (req, res) => {
+router.get("/:id", autenticar, async (req, res) => {  // ✅ QUITÉ soloProveedores
     try {
         const { id } = req.params;
         
@@ -196,7 +194,7 @@ router.get("/:id/estadisticas", autenticar, async (req, res) => {
                     citasTotales: totalCitas,
                     citasCompletadas: completadas,
                     citasPendientes: totalCitas - completadas,
-                    calificacionPromedio: "N/A" // Puedes implementar calificaciones después
+                    calificacionPromedio: "N/A"
                 };
             }
         } else if (req.usuario.tipo_usuario === 'proveedor') {

@@ -67,40 +67,82 @@ export default {
     methods: {
         // En Login.vue - método login() COMPLETO
         async login() {
-            try {
-                console.log('🔑 Credenciales:', {
-                    correo: this.correo,
-                    tipoUsuario: this.tipoUsuario
-                });
+    try {
+        console.log('🔑 Credenciales:', {
+            correo: this.correo,
+            tipoUsuario: this.tipoUsuario
+        });
 
-                const res = await axios.post('http://localhost:4000/api/usuarios/login', {
-                    correo: this.correo,
-                    contrasena: this.contrasena,
-                    tipo_usuario: this.tipoUsuario
-                });
+        const res = await axios.post('http://localhost:4000/api/usuarios/login', {
+            correo: this.correo,
+            contrasena: this.contrasena,
+            tipo_usuario: this.tipoUsuario
+        });
 
-                console.log('📦 Respuesta completa:', res.data);
-                console.log('👤 Datos usuario:', res.data.usuario);
-                console.log('🎫 Token:', res.data.token);
+        console.log('📦 Respuesta completa:', res.data);
+        console.log('👤 Datos usuario:', res.data.usuario);
+        console.log('🎫 Token:', res.data.token);
 
-                if (!res.data.usuario || !res.data.token) {
-                    throw new Error('Respuesta del servidor incompleta');
-                }
-
-                // ✅ AGREGAR ESTO: Usar el store para login
-                const authStore = useAuthStore();
-                authStore.login(res.data.token, res.data.usuario);
-
-                console.log('✅ Login exitoso, redirigiendo...');
-
-                // ✅ AGREGAR ESTO: Redirección forzada a servicios
-                this.$router.push('/servicios');
-
-            } catch (err) {
-                console.error('💥 Error completo:', err);
-                this.mensaje = err.response?.data || err.message || 'Error al iniciar sesión';
-            }
+        if (!res.data.usuario || !res.data.token) {
+            throw new Error('Respuesta del servidor incompleta');
         }
+
+        // ✅ AGREGAR ESTO: Usar el store para login
+        const authStore = useAuthStore();
+        authStore.login(res.data.token, res.data.usuario);
+
+        console.log('✅ Login exitoso, redirigiendo...');
+
+        // 🆕 CORRECCIÓN: Redirección según tipo de usuario
+        const usuario = res.data.usuario;
+        
+        // Verificar si el tipo de usuario coincide con el seleccionado
+        if (usuario.tipo_usuario !== this.tipoUsuario) {
+            throw new Error(`Este correo está registrado como ${usuario.tipo_usuario}, no como ${this.tipoUsuario}`);
+        }
+
+        // 🆕 REDIRECCIÓN INTELIGENTE SEGÚN TIPO DE USUARIO
+        if (usuario.tipo_usuario === 'proveedor') {
+            console.log('🚀 Redirigiendo proveedor a dashboard');
+            
+            // Verificar si el proveedor tiene emprendimiento
+            try {
+                const response = await axios.get(`http://localhost:4000/api/emprendimientos/usuario/${usuario.id_usuario}`);
+                const tieneEmprendimiento = response.data.tieneEmprendimiento;
+
+                if (tieneEmprendimiento) {
+                    this.$router.push('/dashboard');
+                } else {
+                    this.$router.push('/dashboard/emprendimiento');
+                }
+            } catch (error) {
+                console.error('Error verificando emprendimiento:', error);
+                // Si hay error, enviar a registro de emprendimiento por seguridad
+                this.$router.push('/dashboard/emprendimiento');
+            }
+            
+        } else if (usuario.tipo_usuario === 'cliente') {
+            console.log('🛍️ Redirigiendo cliente a servicios');
+            this.$router.push('/servicios');
+            
+        } else {
+            console.warn('⚠️ Tipo de usuario desconocido:', usuario.tipo_usuario);
+            this.$router.push('/servicios');
+        }
+
+    } catch (err) {
+        console.error('💥 Error completo:', err);
+        
+        // 🆕 MEJOR MANEJO DE ERRORES
+        if (err.response?.status === 401) {
+            this.mensaje = 'Credenciales incorrectas';
+        } else if (err.response?.data) {
+            this.mensaje = err.response.data;
+        } else {
+            this.mensaje = err.message || 'Error al iniciar sesión';
+        }
+    }
+}
     }
 }
 </script>

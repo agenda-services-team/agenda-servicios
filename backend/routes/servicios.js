@@ -25,6 +25,12 @@ const upload = multer({
 
 const router = express.Router();
 
+// 🆕 DEBUG: Ver todas las rutas que se acceden
+router.use((req, res, next) => {
+    console.log('📍 RUTA ACCEDIDA:', req.method, req.url);
+    next();
+});
+
 // 🆕 MIDDLEWARE PARA SOLO PROVEEDORES
 const soloProveedores = (req, res, next) => {
     if (req.usuario.tipo_usuario !== 'proveedor') {
@@ -41,66 +47,58 @@ const soloProveedores = (req, res, next) => {
 router.get("/detalle/:id", async (req, res) => {
     try {
         const { id } = req.params;
-        console.log(`🔍 Buscando detalle del servicio ID: ${id}`);
+        console.log(`🎯🎯🎯 EJECUTANDO /detalle/:id para ID: ${id} 🎯🎯🎯`);
         
-        const { data, error } = await supabase
+        // CONSULTA DIRECTA Y SIMPLE
+        const { data: servicioData, error: servicioError } = await supabase
             .from("servicios")
-            .select(`
-                *,
-                emprendimientos (
-                    nombre_negocio,
-                    descripcion,
-                    telefono,
-                    direccion,
-                    horario_atencion,
-                    usuarios (
-                        nombre,
-                        telefono,
-                        correo
-                    )
-                )
-            `)
+            .select("*")
             .eq("id_servicio", id)
             .single();
 
-        if (error || !data) {
-            console.error("❌ Servicio no encontrado:", error);
-            return res.status(404).json({ 
-                error: "Servicio no encontrado" 
+        console.log('📊 Resultado consulta detalle:', {
+            tieneData: !!servicioData,
+            error: servicioError
+        });
+
+        if (servicioError) {
+            console.error('❌ Error específico:', servicioError);
+            if (servicioError.code === 'PGRST116') {
+                return res.status(404).json({ 
+                    error: `Servicio con ID ${id} no encontrado en la base de datos` 
+                });
+            }
+            return res.status(500).json({ 
+                error: "Error de base de datos" 
             });
         }
 
-        // Formatear respuesta para el frontend
+        if (!servicioData) {
+            return res.status(404).json({ 
+                error: `Servicio con ID ${id} no existe` 
+            });
+        }
+
+        console.log('✅✅✅ SERVICIO ENCONTRADO EN DETALLE:', servicioData.nombre_servicio);
+
+        // Respuesta simplificada - SOLO datos del servicio
         const servicio = {
-            id_servicio: data.id_servicio,
-            nombre: data.nombre_servicio,
-            descripcion: data.descripcion,
-            precio: data.precio,
-            duracion: data.duracion,
-            imagen_referencia: data.imagen_referencia,
-            // Información del emprendimiento
-            emprendimiento: {
-                nombre: data.emprendimientos?.nombre_negocio || "Sin nombre",
-                descripcion: data.emprendimientos?.descripcion,
-                telefono: data.emprendimientos?.telefono,
-                direccion: data.emprendimientos?.direccion,
-                horario: data.emprendimientos?.horario_atencion
-            },
-            // Información del proveedor
-            proveedor: {
-                nombre: data.emprendimientos?.usuarios?.nombre || "Desconocido",
-                telefono: data.emprendimientos?.usuarios?.telefono,
-                email: data.emprendimientos?.usuarios?.correo
-            }
+            id_servicio: servicioData.id_servicio,
+            nombre: servicioData.nombre_servicio,
+            descripcion: servicioData.descripcion,
+            precio: servicioData.precio,
+            duracion: servicioData.duracion,
+            imagen_referencia: servicioData.imagen_referencia,
+            id_emprendimiento: servicioData.id_emprendimiento,
+            mensaje: "Detalle cargado exitosamente"
         };
 
-        console.log(`✅ Detalles del servicio ${id} cargados`);
         res.json(servicio);
 
     } catch (error) {
-        console.error("💥 Error al obtener detalle del servicio:", error.message);
+        console.error("💥 Error crítico en /detalle/:id:", error.message);
         res.status(500).json({ 
-            error: "Error al obtener detalle del servicio: " + error.message 
+            error: "Error interno del servidor" 
         });
     }
 });
@@ -112,17 +110,7 @@ router.get("/public/todos", async (req, res) => {
 
         const { data, error } = await supabase
             .from("servicios")
-            .select(`
-                *,
-                emprendimientos (
-                    id_emprendimiento,
-                    nombre_negocio,
-                    usuarios (
-                        id_usuario,
-                        nombre
-                    )
-                )
-            `)
+            .select("*")
             .order("id_servicio", { ascending: true });
 
         if (error) {
@@ -138,51 +126,29 @@ router.get("/public/todos", async (req, res) => {
             descripcion: s.descripcion,
             precio: s.precio,
             duracion: s.duracion,
-            imagen_referencia: s.imagen_referencia,
-            nombre_emprendimiento: s.emprendimientos?.nombre_negocio || "Sin nombre",
-            id_proveedor: s.emprendimientos?.usuarios?.id_usuario,
-            nombre_proveedor: s.emprendimientos?.usuarios?.nombre || "Desconocido"
+            imagen_referencia: s.imagen_referencia
         }));
 
         res.json(servicios);
     } catch (error) {
         console.error("💥 Error al obtener servicios públicos:", error.message);
         res.status(500).json({ 
-            error: "Error al obtener servicios: " + error.message 
+            error: "Error al obtener servicios" 
         });
     }
 });
 
-// Obtener servicios públicos (alias de /public/todos)
+// Obtener servicios públicos (versión simple)
 router.get("/public/cliente", async (req, res) => {
     try {
         console.log('🔍 Ejecutando /public/cliente');
 
         const { data, error } = await supabase
             .from("servicios")
-            .select(`
-                *,
-                emprendimientos (
-                    id_emprendimiento,
-                    nombre_negocio,
-                    descripcion,
-                    telefono,
-                    direccion,
-                    usuarios (
-                        id_usuario,
-                        nombre,
-                        telefono
-                    )
-                )
-            `)
+            .select("*")
             .order("id_servicio", { ascending: true });
 
-        if (error) {
-            console.error('❌ Error Supabase:', error);
-            throw error;
-        }
-
-        console.log(`✅ Servicios encontrados: ${data?.length || 0}`);
+        if (error) throw error;
 
         const servicios = data.map((s) => ({
             id_servicio: s.id_servicio,
@@ -190,22 +156,14 @@ router.get("/public/cliente", async (req, res) => {
             descripcion: s.descripcion,
             precio: s.precio,
             duracion: s.duracion,
-            imagen_referencia: s.imagen_referencia,
-            id_emprendimiento: s.id_emprendimiento,
-            nombre_emprendimiento: s.emprendimientos?.nombre_negocio || "Sin nombre",
-            descripcion_emprendimiento: s.emprendimientos?.descripcion,
-            telefono_emprendimiento: s.emprendimientos?.telefono,
-            direccion_emprendimiento: s.emprendimientos?.direccion,
-            id_proveedor: s.emprendimientos?.usuarios?.id_usuario,
-            nombre_proveedor: s.emprendimientos?.usuarios?.nombre || "Desconocido",
-            telefono_proveedor: s.emprendimientos?.usuarios?.telefono
+            imagen_referencia: s.imagen_referencia
         }));
 
         res.json(servicios);
     } catch (error) {
-        console.error("💥 Error al obtener servicios para cliente:", error.message);
+        console.error("💥 Error en /public/cliente:", error.message);
         res.status(500).json({ 
-            error: "Error al obtener servicios: " + error.message 
+            error: "Error al obtener servicios" 
         });
     }
 });

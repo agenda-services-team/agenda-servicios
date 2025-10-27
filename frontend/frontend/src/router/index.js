@@ -128,29 +128,37 @@ router.beforeEach(async (to, from, next) => {
     }
 
     // Verificar emprendimiento para proveedores en dashboard
-    if (to.path.startsWith('/dashboard') && to.path !== '/dashboard/emprendimiento') {
-        try {
-            const id_usuario = store.userId || localStorage.getItem('id_usuario');
-            
-            if (!id_usuario) {
-                next('/dashboard/emprendimiento');
-                return;
-            }
-
-            const response = await axios.get(`http://localhost:4000/api/emprendimientos/usuario/${id_usuario}`);
-            const tieneEmprendimiento = response.data.tieneEmprendimiento;
-
-            if (!tieneEmprendimiento) {
-                next('/dashboard/emprendimiento');
-                return;
-            }
-        } catch (error) {
-            console.error('Error al verificar emprendimiento:', error);
-            // En caso de error, redirigir al registro de emprendimiento
+    // En router.beforeEach, mejora esta parte:
+if (to.path.startsWith('/dashboard') && to.path !== '/dashboard/emprendimiento') {
+    try {
+        const id_usuario = store.userId || localStorage.getItem('id_usuario');
+        
+        if (!id_usuario) {
             next('/dashboard/emprendimiento');
             return;
         }
+
+        const response = await axios.get(`http://localhost:4000/api/emprendimientos/usuario/${id_usuario}`, {
+            headers: {
+                'Authorization': `Bearer ${localStorage.getItem('token')}`
+            }
+        });
+        
+        // Asegúrate de que la respuesta tenga la estructura correcta
+        const tieneEmprendimiento = response.data.tieneEmprendimiento || 
+                                (response.data.emprendimiento && response.data.emprendimiento.id_emprendimiento);
+
+        if (!tieneEmprendimiento) {
+            next('/dashboard/emprendimiento');
+            return;
+        }
+    } catch (error) {
+        console.error('Error al verificar emprendimiento:', error);
+        // En caso de error, redirigir al registro de emprendimiento
+        next('/dashboard/emprendimiento');
+        return;
     }
+}
 
     next();
 });
