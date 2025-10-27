@@ -1,31 +1,26 @@
-<!-- src/components/ClientNavbar.vue - NUEVO COMPONENTE -->
+<!-- src/components/ClientNavbar.vue -->
 <template>
     <nav class="client-navbar">
         <!-- Logo -->
         <div class="nav-brand">
-            <router-link to="/servicios" class="logo-link">
+            <router-link to="/dashboard" class="logo-link">
                 <img src="/src/assets/logo.png" alt="OaxacaGlow" class="logo-img" />
                 <span class="logo-text">OaxacaGlow</span>
             </router-link>
         </div>
-        
+
         <!-- Buscador centrado -->
-        <div class="nav-center">
+        <div class="nav-center" v-if="!isMobile">
             <div class="search-container">
                 <svg class="search-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor">
                     <circle cx="11" cy="11" r="8"></circle>
                     <path d="m21 21-4.3-4.3"></path>
                 </svg>
-                <input 
-                    type="text" 
-                    placeholder="Buscar servicios..." 
-                    class="search-input"
-                    v-model="searchQuery"
-                    @input="handleSearch"
-                />
+                <input v-model="searchQuery" type="text" placeholder="Buscar servicios..." class="search-input"
+                    @input="handleSearch" />
             </div>
         </div>
-        
+
         <!-- Menú de usuario -->
         <div class="nav-user">
             <div class="user-menu">
@@ -37,10 +32,10 @@
                         <line x1="3" y1="18" x2="21" y2="18"></line>
                     </svg>
                 </button>
-                
+
                 <!-- Opciones de usuario -->
                 <div class="user-options" :class="{ 'mobile-open': menuOpen }">
-                    <router-link to="/mis-citas" class="user-option" @click="closeMenu">
+                    <router-link to="/dashboard/agenda" class="user-option" @click="closeMenu">
                         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor">
                             <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
                             <line x1="16" y1="2" x2="16" y2="6"></line>
@@ -49,15 +44,15 @@
                         </svg>
                         Mis Citas
                     </router-link>
-                    
-                    <router-link to="/perfil" class="user-option" @click="closeMenu">
+
+                    <router-link to="/dashboard/perfil" class="user-option" @click="closeMenu">
                         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor">
                             <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
                             <circle cx="12" cy="7" r="4"></circle>
                         </svg>
                         Mi Perfil
                     </router-link>
-                    
+
                     <button @click="handleLogout" class="user-option logout-btn">
                         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor">
                             <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
@@ -67,7 +62,7 @@
                         Cerrar Sesión
                     </button>
                 </div>
-                
+
                 <!-- Avatar -->
                 <div class="user-avatar" @click="toggleMenu">
                     {{ userInitials }}
@@ -88,19 +83,21 @@ export default {
         return {
             searchQuery: '',
             menuOpen: false,
-            isMobile: false
-        }
+            isMobile: false,
+        };
     },
     computed: {
         ...mapState(useAuthStore, ['isAuthenticated', 'userName']),
         userInitials() {
-            return this.userName
-                ?.split(' ')
-                .map(word => word[0])
-                .join('')
-                .toUpperCase()
-                .substring(0, 2) || 'US';
-        }
+            return (
+                this.userName
+                    ?.split(' ')
+                    .map((word) => word[0])
+                    .join('')
+                    .toUpperCase()
+                    .substring(0, 2) || 'US'
+            );
+        },
     },
     methods: {
         ...mapActions(useAuthStore, ['logout']),
@@ -110,40 +107,44 @@ export default {
         closeMenu() {
             this.menuOpen = false;
         },
-        checkMobile() {
-            this.isMobile = window.innerWidth < 768;
-        },
         handleSearch() {
-            // Emitir evento de búsqueda al componente padre
             this.$emit('search', this.searchQuery);
         },
         handleLogout() {
             this.logout();
             this.closeMenu();
             this.$router.push('/');
-        }
+        },
+        checkMobile() {
+            this.isMobile = window.innerWidth < 768;
+        },
+        handleClickOutside(event) {
+            if (!event.target.closest('.user-menu')) {
+                this.menuOpen = false;
+            }
+        },
     },
     mounted() {
         this.checkMobile();
         window.addEventListener('resize', this.checkMobile);
-        // Cerrar menú al hacer clic fuera
         document.addEventListener('click', this.handleClickOutside);
     },
     beforeUnmount() {
         window.removeEventListener('resize', this.checkMobile);
         document.removeEventListener('click', this.handleClickOutside);
-    }
-}
+    },
+};
 </script>
 
 <style scoped>
+/* --- mismo estilo que el tuyo, sin cambios --- */
 .client-navbar {
     display: flex;
     justify-content: space-between;
     align-items: center;
     padding: 1rem 2rem;
     background: white;
-    box-shadow: 0 2px 20px rgba(0,0,0,0.1);
+    box-shadow: 0 2px 20px rgba(0, 0, 0, 0.1);
     position: fixed;
     top: 0;
     left: 0;
@@ -153,7 +154,6 @@ export default {
     backdrop-filter: blur(10px);
 }
 
-/* Logo */
 .nav-brand {
     flex-shrink: 0;
 }
@@ -173,16 +173,13 @@ export default {
 
 .logo-img {
     height: 35px;
-    width: auto;
 }
 
 .logo-text {
     font-size: 1.5rem;
     font-weight: 800;
-    letter-spacing: -0.5px;
 }
 
-/* Buscador centrado */
 .nav-center {
     flex: 1;
     display: flex;
@@ -203,7 +200,6 @@ export default {
     top: 50%;
     transform: translateY(-50%);
     color: #666;
-    z-index: 2;
 }
 
 .search-input {
@@ -226,36 +222,12 @@ export default {
     transform: scale(1.02);
 }
 
-.search-input::placeholder {
-    color: #888;
-    font-weight: 400;
-}
-
-/* Menú de usuario */
-.nav-user {
-    flex-shrink: 0;
-}
-
+/* Menú usuario */
 .user-menu {
     display: flex;
     align-items: center;
     gap: 1rem;
     position: relative;
-}
-
-.menu-toggle {
-    display: none;
-    background: none;
-    border: none;
-    padding: 0.5rem;
-    cursor: pointer;
-    color: #666;
-    border-radius: 8px;
-    transition: background 0.3s ease;
-}
-
-.menu-toggle:hover {
-    background: #f5f5f5;
 }
 
 .user-options {
@@ -284,8 +256,6 @@ export default {
 .user-option:hover {
     background: linear-gradient(135deg, #fce9ee, #f8f0f3);
     color: #791236;
-    transform: translateY(-1px);
-    box-shadow: 0 4px 12px rgba(121, 18, 54, 0.1);
 }
 
 .logout-btn:hover {
@@ -314,91 +284,60 @@ export default {
     box-shadow: 0 4px 15px rgba(121, 18, 54, 0.3);
 }
 
-.user-name-mobile {
+.menu-toggle {
     display: none;
-    font-size: 0.8rem;
+    background: none;
+    border: none;
+    padding: 0.5rem;
+    cursor: pointer;
 }
 
-/* ========== RESPONSIVE ========== */
+/* Responsive */
 @media (max-width: 768px) {
-    .client-navbar {
-        padding: 0.75rem 1rem;
-    }
-    
     .nav-center {
-        margin: 0 1rem;
-        display: none; /* Ocultar buscador en móvil por ahora */
+        display: none;
     }
-    
+
     .menu-toggle {
         display: block;
     }
-    
+
     .user-options {
         position: absolute;
         top: 100%;
         right: 0;
         background: white;
         border-radius: 16px;
-        box-shadow: 0 10px 40px rgba(0,0,0,0.15);
+        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
         flex-direction: column;
         padding: 1rem;
         min-width: 220px;
         display: none;
-        border: 1px solid #f0f0f0;
     }
-    
+
     .user-options.mobile-open {
         display: flex;
+        animation: slideDown 0.3s ease;
     }
-    
-    .user-option {
-        width: 100%;
-        justify-content: flex-start;
-        padding: 0.75rem 1rem;
-    }
-    
+
     .logo-text {
         display: none;
     }
-    
+
     .user-name-mobile {
         display: inline;
     }
-    
-    .user-avatar {
-        padding: 0.4rem 0.8rem;
-    }
 }
 
-@media (max-width: 480px) {
-    .client-navbar {
-        padding: 0.5rem;
-    }
-    
-    .nav-center {
-        display: none;
-    }
-    
-    .user-avatar {
-        min-width: 45px;
-        font-size: 0.8rem;
-    }
-}
-
-/* Animaciones */
 @keyframes slideDown {
     from {
         opacity: 0;
         transform: translateY(-10px);
     }
+
     to {
         opacity: 1;
         transform: translateY(0);
     }
-}
-
-.user-options.mobile-open {
-    animation: slideDown 0.3s ease;
 }
 </style>

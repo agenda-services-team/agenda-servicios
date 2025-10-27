@@ -15,16 +15,13 @@
                 <!-- Buscador centrado -->
                 <div class="header-center">
                     <div class="search-container">
-                        <svg class="search-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                        <svg class="search-icon" width="20" height="20" viewBox="0 0 24 24" fill="none"
+                            stroke="currentColor">
                             <circle cx="11" cy="11" r="8"></circle>
                             <path d="m21 21-4.3-4.3"></path>
                         </svg>
-                        <input 
-                            v-model="filtroBusqueda" 
-                            type="text" 
-                            placeholder="Buscar servicios..." 
-                            class="search-input"
-                        >
+                        <input v-model="filtroBusqueda" type="text" placeholder="Buscar servicios..."
+                            class="search-input">
                     </div>
                 </div>
 
@@ -37,7 +34,8 @@
                                 {{ userInitials }}
                             </div>
                             <span class="user-name">{{ userName }}</span>
-                            <svg class="chevron-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                            <svg class="chevron-icon" width="16" height="16" viewBox="0 0 24 24" fill="none"
+                                stroke="currentColor">
                                 <polyline points="6 9 12 15 18 9"></polyline>
                             </svg>
                         </div>
@@ -53,7 +51,7 @@
                                 </svg>
                                 Mis Citas
                             </router-link>
-                            
+
                             <router-link to="/perfil" class="dropdown-item" @click="closeUserMenu">
                                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor">
                                     <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
@@ -61,9 +59,9 @@
                                 </svg>
                                 Mi Perfil
                             </router-link>
-                            
+
                             <div class="dropdown-divider"></div>
-                            
+
                             <button @click="handleLogout" class="dropdown-item logout-item">
                                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor">
                                     <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
@@ -108,20 +106,12 @@
 
                 <!-- Grid de servicios -->
                 <div v-else class="services-grid">
-                    <div 
-                        v-for="servicio in serviciosFiltrados" 
-                        :key="servicio.id_servicio" 
-                        class="service-card"
-                        @click="verDetalleServicio(servicio)"
-                    >
+                    <div v-for="servicio in serviciosFiltrados" :key="servicio.id_servicio" class="service-card"
+                        @click="verDetalleServicio(servicio)">
                         <!-- Contenido de la tarjeta (sin cambios) -->
                         <div class="card-image-container">
-                            <img 
-                                :src="servicio.imagen_referencia || '/src/images/default-service.jpg'" 
-                                :alt="servicio.nombre"
-                                class="service-image"
-                                @error="handleImageError"
-                            />
+                            <img :src="servicio.imagen_referencia || '/src/images/default-service.jpg'"
+                                :alt="servicio.nombre" class="service-image" @error="handleImageError" />
                             <div class="image-overlay">
                                 <span class="view-details">Ver detalles</span>
                             </div>
@@ -129,7 +119,7 @@
                                 ${{ servicio.precio }}
                             </div>
                         </div>
-                        
+
                         <div class="card-content">
                             <div class="service-header">
                                 <h3 class="service-name">{{ servicio.nombre }}</h3>
@@ -141,9 +131,9 @@
                                     {{ servicio.duracion }}min
                                 </div>
                             </div>
-                            
+
                             <p class="service-description">{{ servicio.descripcion }}</p>
-                            
+
                             <div class="service-footer">
                                 <div class="provider-info">
                                     <div class="provider-avatar">
@@ -183,9 +173,9 @@ export default {
         ...mapState(useAuthStore, ['userName']),
         serviciosFiltrados() {
             if (!this.filtroBusqueda) return this.servicios;
-            
+
             const searchTerm = this.filtroBusqueda.toLowerCase();
-            return this.servicios.filter(servicio => 
+            return this.servicios.filter(servicio =>
                 servicio.nombre.toLowerCase().includes(searchTerm) ||
                 servicio.descripcion.toLowerCase().includes(searchTerm) ||
                 servicio.nombre_proveedor.toLowerCase().includes(searchTerm) ||
@@ -286,7 +276,7 @@ export default {
 /* ========== HEADER INTEGRADO ========== */
 .services-header {
     background: white;
-    box-shadow: 0 2px 20px rgba(0,0,0,0.08);
+    box-shadow: 0 2px 20px rgba(0, 0, 0, 0.08);
     position: sticky;
     top: 0;
     z-index: 1000;
@@ -390,7 +380,7 @@ export default {
 .user-info:hover {
     background: white;
     border-color: #e8ecef;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 }
 
 .user-avatar {
@@ -424,12 +414,13 @@ export default {
     right: 0;
     background: white;
     border-radius: 16px;
-    box-shadow: 0 10px 40px rgba(0,0,0,0.15);
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
     padding: 0.75rem;
     min-width: 200px;
     display: none;
     border: 1px solid #f0f0f0;
     margin-top: 0.5rem;
+    z-index: 1001;
 }
 
 .user-dropdown.dropdown-open {
@@ -476,6 +467,7 @@ export default {
         opacity: 0;
         transform: translateY(-10px);
     }
+
     to {
         opacity: 1;
         transform: translateY(0);
@@ -505,7 +497,6 @@ export default {
     background: linear-gradient(135deg, #791236 0%, #553a6a 100%);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
-    background-clip: text;
     margin-bottom: 0.5rem;
     line-height: 1.2;
 }
@@ -530,144 +521,189 @@ export default {
     font-weight: 600;
 }
 
-/* ========== RESPONSIVE HEADER ========== */
-@media (max-width: 768px) {
+/* Grid de servicios */
+.services-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+    gap: 2rem;
+}
+
+.service-card {
+    background: white;
+    border-radius: 16px;
+    overflow: hidden;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+}
+
+.service-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.12);
+}
+
+.card-image-container {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 16/9;
+    overflow: hidden;
+}
+
+.service-image {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: all 0.3s ease;
+}
+
+.image-overlay {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-weight: 700;
+    opacity: 0;
+    background: rgba(0, 0, 0, 0.35);
+    transition: opacity 0.3s ease;
+}
+
+.card-image-container:hover .image-overlay {
+    opacity: 1;
+}
+
+.price-tag {
+    position: absolute;
+    bottom: 12px;
+    right: 12px;
+    background: #791236;
+    color: white;
+    padding: 0.3rem 0.75rem;
+    border-radius: 12px;
+    font-weight: 600;
+    font-size: 0.85rem;
+}
+
+/* Contenido de tarjeta */
+.card-content {
+    padding: 1rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.service-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 1rem;
+}
+
+.duration-badge {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+    background: #f3f4f6;
+    padding: 0.2rem 0.5rem;
+    border-radius: 12px;
+    font-size: 0.75rem;
+    font-weight: 600;
+}
+
+.service-description {
+    font-size: 0.9rem;
+    color: #555;
+}
+
+.service-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: auto;
+}
+
+.provider-info {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.provider-avatar {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: #791236;
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.75rem;
+    font-weight: 700;
+}
+
+.reserve-btn {
+    background: #791236;
+    color: white;
+    border: none;
+    border-radius: 12px;
+    padding: 0.4rem 0.8rem;
+    cursor: pointer;
+    font-weight: 600;
+    transition: all 0.3s ease;
+}
+
+.reserve-btn:hover {
+    background: #553a6a;
+}
+
+/* ========== RESPONSIVE ========== */
+@media (max-width:768px) {
     .header-content {
         padding: 0 1rem;
         gap: 1rem;
     }
-    
-    .logo-text {
-        display: none;
-    }
-    
+
+    .logo-text,
     .user-name {
         display: none;
     }
-    
-    .user-info {
-        padding: 0.5rem;
+
+    .search-input {
+        padding-left: 2.5rem;
     }
-    
+
     .services-content {
         padding: 1rem;
     }
 }
 
-@media (max-width: 480px) {
+@media (max-width:480px) {
     .header-center {
         display: none;
     }
-    
+
     .services-content {
         padding: 0.5rem;
     }
-}
 
-
-/* ========== MEDIA QUERIES ========== */
-
-
-
-/* Desktop (≥1024px) */
-@media (min-width: 1024px) {
-    .services-page {
-        padding: 2rem;
-    }
-    
-    .services-grid {
-        grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
-        gap: 2rem;
-    }
-    
-    .page-header {
-        margin-bottom: 3rem;
-    }
-}
-
-/* Pantallas grandes (≥1280px) */
-@media (min-width: 1280px) {
-    .services-grid {
-        grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
-    }
-}
-
-/* Móviles pequeños (≤480px) */
-@media (max-width: 480px) {
-    .services-page {
-        padding: 0.75rem;
-    }
-    
     .services-grid {
         grid-template-columns: 1fr;
         gap: 1rem;
     }
-    
+
     .service-header {
         flex-direction: column;
         align-items: flex-start;
         gap: 0.5rem;
     }
-    
+
     .duration-badge {
         align-self: flex-start;
     }
-    
+
     .provider-business {
         display: none;
-    }
-    
-    .card-content {
-        padding: 1rem;
-    }
-}
-
-/* Orientación landscape en móviles */
-@media (max-height: 600px) and (orientation: landscape) {
-    .services-page {
-        padding: 1rem 0.75rem;
-    }
-    
-    .card-image-container {
-        aspect-ratio: 16/8;
-    }
-}
-
-/* Alto contraste y accesibilidad */
-@media (prefers-contrast: high) {
-    .service-card {
-        border: 2px solid #333;
-    }
-    
-    .price-tag {
-        background: white;
-        border: 1px solid #333;
-    }
-}
-
-/* Modo oscuro (opcional) */
-@media (prefers-color-scheme: dark) {
-    .services-page {
-        background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
-    }
-    
-    .service-card {
-        background: #2d2d2d;
-        border-color: #404040;
-    }
-    
-    .service-name {
-        color: #fff;
-    }
-    
-    .service-description {
-        color: #ccc;
-    }
-    
-    .search-input {
-        background: #2d2d2d;
-        border-color: #404040;
-        color: #fff;
     }
 }
 </style>
