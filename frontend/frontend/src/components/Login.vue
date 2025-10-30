@@ -1,6 +1,5 @@
 <template>
     <div class="login-page">
-        <!-- Navbar para login -->
         <nav class="login-navbar">
             <div class="nav-left">
                 <button class="icon-btn" @click="$router.back()" aria-label="Regresar">
@@ -12,7 +11,7 @@
             </div>
             <div class="nav-center">OaxacaGlow</div>
             <div class="nav-right">
-                <button class="icon-btn" aria-label="Ayuda">
+                <button class="icon-btn" @click="mostrarAyuda" aria-label="Ayuda">
                     <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#791236" stroke-width="2.2"
                         stroke-linecap="round" stroke-linejoin="round">
                         <circle cx="12" cy="12" r="10" />
@@ -23,29 +22,46 @@
             </div>
         </nav>
 
-        <!-- Logo abajo del navbar -->
         <div class="logo-center">
             <img src="/src/assets/logo.png" alt="Logo" class="login-logo" />
         </div>
 
-        <!-- Cliente o proveedor -->
-        <div class="user-type-selector">
-            <button :class="{ active: tipoUsuario === 'cliente' }" @click="tipoUsuario = 'cliente'">Cliente</button>
-            <button :class="{ active: tipoUsuario === 'proveedor' }"
-                @click="tipoUsuario = 'proveedor'">Proveedor</button>
-        </div>
-
-        <!-- Formulario de login -->
         <form class="login-form" @submit.prevent="login">
-            <input v-model="correo" type="email" placeholder="Correo electrónico" required />
-            <input v-model="contrasena" type="password" placeholder="Contraseña" required />
-            <button type="submit">Ingresar</button>
-            <p class="login-message">{{ mensaje }}</p>
+            <div class="input-group">
+                <input 
+                    v-model="correo" 
+                    type="email" 
+                    placeholder="Correo electrónico" 
+                    required 
+                    :disabled="loading"
+                />
+            </div>
+            
+            <div class="input-group">
+                <input 
+                    v-model="contrasena" 
+                    type="password" 
+                    placeholder="Contraseña" 
+                    required 
+                    :disabled="loading"
+                />
+            </div>
+            
+            <button type="submit" :disabled="loading">
+                <span v-if="loading" class="loading-spinner"></span>
+                {{ loading ? 'Ingresando...' : 'Ingresar' }}
+            </button>
+            
+            <p v-if="mensaje" class="login-message error">
+                {{ mensaje }}
+            </p>
         </form>
+        
         <div class="register-link">
             ¿No tienes una cuenta?
             <router-link to="/registro" class="unirme-link">Unirme</router-link>
         </div>
+        
         <Footer />
     </div>
 </template>
@@ -54,6 +70,7 @@
 import axios from 'axios';
 import Footer from './Footer.vue';
 import { useAuthStore } from '../store';
+
 export default {
     components: { Footer },
     data() {
@@ -61,88 +78,71 @@ export default {
             correo: '',
             contrasena: '',
             mensaje: '',
-            tipoUsuario: 'cliente',
+            loading: false
         }
     },
-    methods: {
-        // En Login.vue - método login() COMPLETO
-        async login() {
-    try {
-        console.log('🔑 Credenciales:', {
-            correo: this.correo,
-            tipoUsuario: this.tipoUsuario
-        });
-
-        const res = await axios.post('http://localhost:4000/api/usuarios/login', {
-            correo: this.correo,
-            contrasena: this.contrasena,
-            tipo_usuario: this.tipoUsuario
-        });
-
-        console.log('📦 Respuesta completa:', res.data);
-        console.log('👤 Datos usuario:', res.data.usuario);
-        console.log('🎫 Token:', res.data.token);
-
-        if (!res.data.usuario || !res.data.token) {
-            throw new Error('Respuesta del servidor incompleta');
-        }
-
-        // ✅ AGREGAR ESTO: Usar el store para login
+    setup() {
         const authStore = useAuthStore();
-        authStore.login(res.data.token, res.data.usuario);
-
-        console.log('✅ Login exitoso, redirigiendo...');
-
-        // 🆕 CORRECCIÓN: Redirección según tipo de usuario
-        const usuario = res.data.usuario;
-        
-        // Verificar si el tipo de usuario coincide con el seleccionado
-        if (usuario.tipo_usuario !== this.tipoUsuario) {
-            throw new Error(`Este correo está registrado como ${usuario.tipo_usuario}, no como ${this.tipoUsuario}`);
-        }
-
-        // 🆕 REDIRECCIÓN INTELIGENTE SEGÚN TIPO DE USUARIO
-        if (usuario.tipo_usuario === 'proveedor') {
-            console.log('🚀 Redirigiendo proveedor a dashboard');
+        return { authStore };
+    },
+    methods: {
+        async login() {
+            this.loading = true;
+            this.mensaje = '';
             
-            // Verificar si el proveedor tiene emprendimiento
             try {
-                const response = await axios.get(`http://localhost:4000/api/emprendimientos/usuario/${usuario.id_usuario}`);
-                const tieneEmprendimiento = response.data.tieneEmprendimiento;
+                console.log('🔐 Intentando login con:', this.correo);
 
-                if (tieneEmprendimiento) {
-                    this.$router.push('/dashboard');
-                } else {
-                    this.$router.push('/dashboard/emprendimiento');
+                const response = await axios.post('http://localhost:4000/api/usuarios/login', {
+                    correo: this.correo,
+                    contrasena: this.contrasena
+                });
+
+                console.log('📦 Respuesta del servidor:', response.data);
+
+                const { token, usuario } = response.data;
+
+                if (!token || !usuario) {
+                    throw new Error('Respuesta del servidor incompleta');
                 }
-            } catch (error) {
-                console.error('Error verificando emprendimiento:', error);
-                // Si hay error, enviar a registro de emprendimiento por seguridad
-                this.$router.push('/dashboard/emprendimiento');
-            }
-            
-        } else if (usuario.tipo_usuario === 'cliente') {
-            console.log('🛍️ Redirigiendo cliente a servicios');
-            this.$router.push('/servicios');
-            
-        } else {
-            console.warn('⚠️ Tipo de usuario desconocido:', usuario.tipo_usuario);
-            this.$router.push('/servicios');
-        }
 
-    } catch (err) {
-        console.error('💥 Error completo:', err);
+                // Guardar en el store
+                this.authStore.login(token, usuario);
+
+                console.log('✅ Login exitoso, tipo de usuario:', usuario.tipo_usuario);
+
+                // Redirección según tipo de usuario
+                if (usuario.tipo_usuario === 'proveedor') {
+                    console.log('🚀 Redirigiendo a dashboard de proveedor...');
+                    this.$router.push('/dashboard');
+                } else if (usuario.tipo_usuario === 'cliente') {
+                    console.log('🛍️ Redirigiendo a servicios...');
+                    this.$router.push('/servicios');
+                } else {
+                    console.warn('⚠️ Tipo de usuario desconocido:', usuario.tipo_usuario);
+                    this.$router.push('/servicios');
+                }
+
+            } catch (error) {
+                console.error('❌ Error en login:', error);
+                
+                if (error.response?.status === 401) {
+                    this.mensaje = 'Correo o contraseña incorrectos';
+                } else if (error.response?.status === 500) {
+                    this.mensaje = 'Error del servidor. Intente más tarde.';
+                } else if (error.code === 'ERR_NETWORK') {
+                    this.mensaje = 'Error de conexión. Verifique su internet.';
+                } else {
+                    this.mensaje = error.response?.data?.mensaje || 'Error al iniciar sesión';
+                }
+            } finally {
+                this.loading = false;
+            }
+        },
         
-        // 🆕 MEJOR MANEJO DE ERRORES
-        if (err.response?.status === 401) {
-            this.mensaje = 'Credenciales incorrectas';
-        } else if (err.response?.data) {
-            this.mensaje = err.response.data;
-        } else {
-            this.mensaje = err.message || 'Error al iniciar sesión';
+        mostrarAyuda() {
+            alert('Si tienes problemas para iniciar sesión, verifica:\n\n• Que tu correo esté escrito correctamente\n• Que estés usando la contraseña correcta\n• Si olvidaste tu contraseña, contacta con soporte');
         }
-    }
-}
     }
 }
 </script>
@@ -158,7 +158,6 @@ export default {
     padding-top: 40px;
 }
 
-
 .login-navbar {
     width: 100vw;
     background: #f6fbfb;
@@ -171,9 +170,7 @@ export default {
     box-sizing: border-box;
 }
 
-.nav-left,
-.nav-center,
-.nav-right {
+.nav-left, .nav-center, .nav-right {
     display: flex;
     align-items: center;
 }
@@ -187,8 +184,7 @@ export default {
     letter-spacing: 1px;
 }
 
-.nav-left,
-.nav-right {
+.nav-left, .nav-right {
     width: 60px;
     justify-content: center;
 }
@@ -201,6 +197,11 @@ export default {
     display: flex;
     align-items: center;
     justify-content: center;
+    transition: opacity 0.2s;
+}
+
+.icon-btn:hover {
+    opacity: 0.7;
 }
 
 .logo-center {
@@ -216,31 +217,6 @@ export default {
     max-width: 360px;
 }
 
-.user-type-selector {
-    display: flex;
-    justify-content: center;
-    gap: 30px;
-    margin-bottom: 30px;
-}
-
-.user-type-selector button {
-    padding: 10px 30px;
-    border-radius: 20px;
-    border: 2px solid #791236;
-    background: #fff;
-    color: #791236;
-    font-weight: 600;
-    font-size: 1.1em;
-    cursor: pointer;
-    transition: background 0.2s, color 0.2s;
-}
-
-.user-type-selector button.active,
-.user-type-selector button:hover {
-    background: #fce9ee;
-    color: #791236;
-}
-
 .login-form {
     display: flex;
     flex-direction: column;
@@ -253,13 +229,30 @@ export default {
     gap: 18px;
 }
 
-.login-form input {
+.input-group {
+    display: flex;
+    flex-direction: column;
     width: 240px;
+}
+
+.login-form input {
+    width: 100%;
     padding: 10px 14px;
     border-radius: 8px;
     border: 1px solid #ccc;
     font-size: 1em;
-    margin-bottom: 8px;
+    transition: border-color 0.2s;
+    box-sizing: border-box;
+}
+
+.login-form input:focus {
+    outline: none;
+    border-color: #791236;
+}
+
+.login-form input:disabled {
+    background-color: #f5f5f5;
+    cursor: not-allowed;
 }
 
 .login-form button {
@@ -273,17 +266,47 @@ export default {
     font-weight: 600;
     cursor: pointer;
     margin-top: 10px;
-    transition: background 0.2s;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
 }
 
-.login-form button:hover {
+.login-form button:hover:not(:disabled) {
     background: #a31d4a;
+    transform: translateY(-1px);
+}
+
+.login-form button:disabled {
+    background: #ccc;
+    cursor: not-allowed;
+    transform: none;
+}
+
+.loading-spinner {
+    width: 16px;
+    height: 16px;
+    border: 2px solid transparent;
+    border-top: 2px solid #fff;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
 }
 
 .login-message {
-    color: #c00;
     margin-top: 8px;
     min-height: 24px;
+    text-align: center;
+    font-size: 0.95em;
+}
+
+.login-message.error {
+    color: #c00;
 }
 
 .register-link {

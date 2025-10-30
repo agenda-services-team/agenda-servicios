@@ -22,7 +22,9 @@ router.post("/registro", async (req, res) => {
             .eq("correo", correo);
 
         if (errorExiste) throw errorExiste;
-        if (existe.length > 0) return res.status(400).send("Correo ya registrado");
+        if (existe.length > 0) {
+            return res.status(400).json({ mensaje: "El correo ya está registrado" });
+        }
 
         const hashed = await bcrypt.hash(contrasena, 10);
 
@@ -46,28 +48,48 @@ router.post("/registro", async (req, res) => {
         res.json({ mensaje: "Usuario registrado con éxito", usuario: data[0] });
     } catch (err) {
         console.error("Error en registro:", err.message);
-        res.status(500).send("Error en el registro");
+        res.status(500).json({ mensaje: "Error en el registro" });
     }
 });
 
-// Login de usuario
+// Login de usuario - CORREGIDO
 router.post("/login", async (req, res) => {
     try {
         const { correo, contrasena } = req.body;
 
+        console.log('🔐 Intento de login:', { correo });
+
+        // Buscar usuario por correo
         const { data, error } = await supabase
             .from("usuarios")
             .select("*")
             .eq("correo", correo);
 
-        if (error) throw error;
-        if (data.length === 0) return res.status(400).send("Correo o contraseña incorrectos");
+        if (error) {
+            console.error('Error en query:', error);
+            throw error;
+        }
+
+        if (!data || data.length === 0) {
+            console.log('❌ Usuario no encontrado');
+            return res.status(401).json({ mensaje: "Credenciales incorrectas" });
+        }
 
         const usuario = data[0];
+        console.log('👤 Usuario encontrado:', { 
+            id: usuario.id_usuario, 
+            tipo: usuario.tipo_usuario 
+        });
+
+        // Verificar contraseña
         const isMatch = await bcrypt.compare(contrasena, usuario.contrasena);
 
-        if (!isMatch) return res.status(400).send("Correo o contraseña incorrectos");
+        if (!isMatch) {
+            console.log('❌ Contraseña incorrecta');
+            return res.status(401).json({ mensaje: "Credenciales incorrectas" });
+        }
 
+        // Generar token JWT
         const token = jwt.sign(
             { 
                 id_usuario: usuario.id_usuario, 
@@ -76,9 +98,12 @@ router.post("/login", async (req, res) => {
                 correo: usuario.correo
             },
             JWT_SECRET,
-            { expiresIn: "2h" }
+            { expiresIn: "24h" }
         );
 
+        console.log('✅ Login exitoso');
+
+        // Retornar datos del usuario (sin contraseña)
         res.json({ 
             token, 
             usuario: { 
@@ -90,202 +115,115 @@ router.post("/login", async (req, res) => {
                 fecha_registro: usuario.fecha_registro
             } 
         });
+
     } catch (err) {
-        console.error("Error en login:", err.message);
-        res.status(500).send("Error en el login");
+        console.error("❌ Error en login:", err);
+        res.status(500).json({ mensaje: "Error en el servidor" });
     }
 });
 
 // ========== ENDPOINTS AUTENTICADOS ==========
 
-// 🆕 Obtener perfil de usuario
-router.get("/:id", autenticar, async (req, res) => {  // ✅ QUITÉ soloProveedores
+// Obtener perfil de usuario
+router.get('/perfil/:id', autenticar, async (req, res) => {
     try {
-        const { id } = req.params;
-        
-        // Verificar que el usuario solo pueda ver su propio perfil
-        if (parseInt(id) !== req.usuario.id_usuario) {
-            return res.status(403).json({ error: "No tienes permiso para ver este perfil" });
-        }
-
-        const { data, error } = await supabase
-            .from("usuarios")
-            .select("id_usuario, nombre, correo, telefono, tipo_usuario, fecha_registro")
-            .eq("id_usuario", id)
+        const { data: usuario, error } = await supabase
+            .from('usuarios')
+            .select('id_usuario, nombre, correo, telefono, tipo_usuario')
+            .eq('id_usuario', req.params.id)
             .single();
 
-        if (error || !data) {
-            return res.status(404).json({ error: "Usuario no encontrado" });
+        if (error) throw error;
+        if (!usuario) {
+            return res.status(404).json({ mensaje: 'Usuario no encontrado' });
         }
 
-        res.json(data);
-        
+        res.json(usuario);
     } catch (error) {
-        console.error("Error al obtener usuario:", error.message);
-        res.status(500).json({ error: "Error al obtener usuario" });
+        console.error('Error al obtener perfil:', error);
+        res.status(500).json({ mensaje: 'Error al obtener perfil' });
     }
 });
 
-// 🆕 Actualizar perfil de usuario
+// Actualizar perfil de usuario
 router.put("/:id", autenticar, async (req, res) => {
+    const { nombre, telefono } = req.body;
+
     try {
-        const { id } = req.params;
-        const { nombre, telefono } = req.body;
-
-        // Verificar que el usuario solo pueda actualizar su propio perfil
-        if (parseInt(id) !== req.usuario.id_usuario) {
-            return res.status(403).json({ error: "No tienes permiso para actualizar este perfil" });
-        }
-
-        if (!nombre) {
-            return res.status(400).json({ error: "El nombre es obligatorio" });
-        }
-
         const { data, error } = await supabase
-            .from("usuarios")
+            .from('usuarios')
             .update({ 
-                nombre: nombre.trim(),
-                telefono: telefono ? telefono.trim() : null
+                nombre, 
+                telefono
             })
-            .eq("id_usuario", id)
-            .select("id_usuario, nombre, correo, telefono, tipo_usuario, fecha_registro");
+            .eq('id_usuario', req.params.id)
+            .select();
 
         if (error) throw error;
 
-        if (!data || data.length === 0) {
-            return res.status(404).json({ error: "Usuario no encontrado" });
-        }
-
-        res.json({ 
-            mensaje: "Perfil actualizado correctamente", 
-            usuario: data[0] 
-        });
-        
+        res.json(data[0]);
     } catch (error) {
-        console.error("Error al actualizar usuario:", error.message);
-        res.status(500).json({ error: "Error al actualizar usuario" });
+        console.error('Error al actualizar perfil:', error);
+        res.status(500).json({ mensaje: 'Error al actualizar perfil' });
     }
 });
 
-// 🆕 Obtener estadísticas del usuario
+// Obtener estadísticas del usuario
 router.get("/:id/estadisticas", autenticar, async (req, res) => {
     try {
         const { id } = req.params;
 
-        // Verificar permisos
-        if (parseInt(id) !== req.usuario.id_usuario) {
-            return res.status(403).json({ error: "No tienes permiso para ver estas estadísticas" });
-        }
-
-        let estadisticas = {};
-
-        if (req.usuario.tipo_usuario === 'cliente') {
-            // Estadísticas para clientes
-            const { data: citas, error: errorCitas } = await supabase
-                .from("citas")
-                .select("estado")
-                .eq("id_cliente", id);
-
-            if (!errorCitas) {
-                const totalCitas = citas.length;
-                const completadas = citas.filter(c => c.estado === 'completada').length;
-                
-                estadisticas = {
-                    citasTotales: totalCitas,
-                    citasCompletadas: completadas,
-                    citasPendientes: totalCitas - completadas,
-                    calificacionPromedio: "N/A"
-                };
-            }
-        } else if (req.usuario.tipo_usuario === 'proveedor') {
-            // Estadísticas para proveedores
-            const { data: emprendimiento, error: errorEmp } = await supabase
-                .from("emprendimientos")
-                .select("id_emprendimiento")
-                .eq("id_usuario", id)
-                .single();
-
-            if (!errorEmp && emprendimiento) {
-                const { data: servicios, error: errorServ } = await supabase
-                    .from("servicios")
-                    .select("id_servicio")
-                    .eq("id_emprendimiento", emprendimiento.id_emprendimiento);
-
-                const { data: citas, error: errorCitas } = await supabase
-                    .from("citas")
-                    .select("estado")
-                    .eq("id_servicio", servicios?.map(s => s.id_servicio) || []);
-
-                if (!errorServ && !errorCitas) {
-                    const totalCitas = citas.length;
-                    const pendientes = citas.filter(c => c.estado === 'pendiente').length;
-                    
-                    estadisticas = {
-                        totalServicios: servicios.length,
-                        citasTotales: totalCitas,
-                        citasPendientes: pendientes,
-                        citasCompletadas: totalCitas - pendientes
-                    };
-                }
-            }
-        }
-
-        res.json(estadisticas);
-        
-    } catch (error) {
-        console.error("Error al obtener estadísticas:", error.message);
-        res.status(500).json({ error: "Error al obtener estadísticas" });
-    }
-});
-
-// 🆕 Cambiar contraseña
-router.put("/:id/cambiar-password", autenticar, async (req, res) => {
-    try {
-        const { id } = req.params;
-        const { contrasena_actual, nueva_contrasena } = req.body;
-
-        // Verificar permisos
-        if (parseInt(id) !== req.usuario.id_usuario) {
-            return res.status(403).json({ error: "No tienes permiso para realizar esta acción" });
-        }
-
-        if (!contrasena_actual || !nueva_contrasena) {
-            return res.status(400).json({ error: "Ambas contraseñas son obligatorias" });
-        }
-
-        // Obtener usuario actual
-        const { data: usuario, error: errorUser } = await supabase
-            .from("usuarios")
-            .select("contrasena")
-            .eq("id_usuario", id)
+        const { data, error } = await supabase
+            .from('usuarios')
+            .select('*')
+            .eq('id_usuario', id)
             .single();
-
-        if (errorUser || !usuario) {
-            return res.status(404).json({ error: "Usuario no encontrado" });
-        }
-
-        // Verificar contraseña actual
-        const isMatch = await bcrypt.compare(contrasena_actual, usuario.contrasena);
-        if (!isMatch) {
-            return res.status(400).json({ error: "La contraseña actual es incorrecta" });
-        }
-
-        // Hashear nueva contraseña
-        const hashedNueva = await bcrypt.hash(nueva_contrasena, 10);
-
-        // Actualizar contraseña
-        const { error } = await supabase
-            .from("usuarios")
-            .update({ contrasena: hashedNueva })
-            .eq("id_usuario", id);
 
         if (error) throw error;
 
-        res.json({ mensaje: "Contraseña actualizada correctamente" });
-        
+        res.json(data);
     } catch (error) {
-        console.error("Error al cambiar contraseña:", error.message);
-        res.status(500).json({ error: "Error al cambiar contraseña" });
+        console.error('Error al obtener estadísticas:', error);
+        res.status(500).json({ mensaje: 'Error al obtener estadísticas' });
+    }
+});
+
+// Cambiar contraseña
+router.put("/:id/cambiar-password", autenticar, async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { passwordActual, passwordNueva } = req.body;
+
+        // Obtener usuario actual
+        const { data: usuario, error: errorUsuario } = await supabase
+            .from('usuarios')
+            .select('contrasena')
+            .eq('id_usuario', id)
+            .single();
+
+        if (errorUsuario) throw errorUsuario;
+
+        // Verificar contraseña actual
+        const isMatch = await bcrypt.compare(passwordActual, usuario.contrasena);
+        if (!isMatch) {
+            return res.status(400).json({ mensaje: 'Contraseña actual incorrecta' });
+        }
+
+        // Hash de la nueva contraseña
+        const hashedNew = await bcrypt.hash(passwordNueva, 10);
+
+        // Actualizar contraseña
+        const { error } = await supabase
+            .from('usuarios')
+            .update({ contrasena: hashedNew })
+            .eq('id_usuario', id);
+
+        if (error) throw error;
+
+        res.json({ mensaje: 'Contraseña actualizada exitosamente' });
+    } catch (error) {
+        console.error('Error al cambiar contraseña:', error);
+        res.status(500).json({ mensaje: 'Error al cambiar contraseña' });
     }
 });
 
