@@ -5,10 +5,11 @@
         <!-- Formulario crear servicio -->
         <div>
             <h3>Crear Servicio</h3>
-            <input v-model="nombre" placeholder="Nombre" />
+            <input v-model="nombre_servicio" placeholder="Nombre del servicio" />
             <input v-model="descripcion" placeholder="Descripción" />
             <input v-model.number="precio" type="number" placeholder="Precio" />
-            <button @click="crearServicio">Crear</button>
+            <input v-model.number="duracion" type="number" placeholder="Duración (minutos)" />
+            <button @click="crearServicio">Crear Servicio</button>
             <p>{{ mensaje }}</p>
         </div>
 
@@ -30,12 +31,24 @@
 import axios from 'axios';
 
 export default {
+    props: {
+        searchTerm: {
+            type: String,
+            default: ''
+        }
+    },
+    watch: {
+        searchTerm(newTerm) {
+            this.filtroBusqueda = newTerm;
+        }
+    },
     data() {
         return {
             servicios: [],
-            nombre: '',
+            nombre_servicio: '',  // Cambio de nombre a nombre_servicio para match con backend
             descripcion: '',
             precio: 0,
+            duracion: 0,  // Añadido campo duracion
             mensaje: ''
         };
     },
@@ -43,29 +56,47 @@ export default {
         async listarServicios() {
             const token = localStorage.getItem('token');
             try {
-                const res = await axios.get('http://localhost:4000/servicios', {
-                    headers: { Authorization: `Bearer ${token}` }
-                });
-                this.servicios = res.data;
+                // Primero intentamos obtener los servicios como proveedor
+                if (token) {
+                    try {
+                        const res = await axios.get('http://localhost:4000/api/servicios/proveedor/mis-servicios', {
+                            headers: { Authorization: `Bearer ${token}` }
+                        });
+                        console.log('✅ Servicios del proveedor cargados:', res.data);
+                        this.servicios = res.data;
+                        return;
+                    } catch (err) {
+                        console.log('No es proveedor o token inválido, intentando endpoint público');
+                    }
+                }
+
+                // Si no hay token o no es proveedor, usar endpoint público
+                const resPublic = await axios.get('http://localhost:4000/api/servicios/public/todos');
+                console.log('✅ Servicios públicos cargados:', resPublic.data);
+                this.servicios = resPublic.data;
             } catch (err) {
-                this.mensaje = err.response?.data || 'Error al obtener servicios';
+                console.error('❌ Error al cargar servicios:', err);
+                this.mensaje = err.response?.data?.error || err.response?.data || 'Error al obtener servicios';
             }
         },
         async crearServicio() {
             const token = localStorage.getItem('token');
             try {
+                // El endpoint backend espera campos como nombre_servicio, descripcion, precio, duracion
                 await axios.post(
-                    'http://localhost:4000/servicios',
-                    { nombre: this.nombre, descripcion: this.descripcion, precio: this.precio },
+                    'http://localhost:4000/api/servicios',
+                    { nombre_servicio: this.nombre, descripcion: this.descripcion, precio: this.precio, duracion: this.duracion },
                     { headers: { Authorization: `Bearer ${token}` } }
                 );
                 this.mensaje = 'Servicio creado';
                 this.nombre = '';
                 this.descripcion = '';
                 this.precio = 0;
+                this.duracion = 0;
                 this.listarServicios();
             } catch (err) {
-                this.mensaje = err.response?.data || 'Error al crear servicio';
+                // Mostrar mensaje de error más informativo
+                this.mensaje = err.response?.data?.error || err.response?.data || 'Error al crear servicio';
             }
         },
         async editarServicio(servicio) {

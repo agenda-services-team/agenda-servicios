@@ -1,233 +1,233 @@
 import express from "express";
 import { supabase } from "../config/supabaseClient.js";
 import { autenticar } from "../middleware/auth.js";
-import cloudinary from "../config/cloudinary.js";
 import multer from "multer";
-
-
-const storage = multer.memoryStorage();
-const upload = multer({
-    storage,
-    fileFilter: (req, file, cb) => {
-        const filetypes = /jpeg|jpg|png/;
-        const extname = filetypes.test(file.originalname.toLowerCase().split('.').pop());
-        const mimetype = filetypes.test(file.mimetype);
-
-        if (extname && mimetype) {
-            return cb(null, true);
-        } else {
-            cb(new Error("Solo se permiten imágenes JPEG o PNG"));
-        }
-    }
-});
+import { cloudinary } from "../config/cloudinary.js"; // ⚠️ CAMBIAR ESTA LÍNEA
 
 const router = express.Router();
+const upload = multer({ storage: multer.memoryStorage() });
 
-
-router.post("/", autenticar, upload.single("imagen"), async (req, res) => {
+// Obtener todos los servicios (PÚBLICO)
+router.get("/public/todos", async (req, res) => {
     try {
-        const { nombre_servicio, descripcion, precio, duracion } = req.body;
-        const id_emprendimiento = req.usuario.id_emprendimiento;
-        let imagen_referencia = null;
-
-        // Validar campos obligatorios
-        if (!nombre_servicio || !descripcion || precio == null || !duracion) {
-            return res.status(400).send("Todos los campos son obligatorios");
-        }
-
-        if (precio < 0) {
-            return res.status(400).send("El precio debe ser un valor positivo");
-        }
-
-        // Subir imagen a Cloudinary si es que se dio
-        if (req.file) {
-            const result = await new Promise((resolve, reject) => {
-                const stream = cloudinary.uploader.upload_stream(
-                    { folder: "servicios" },
-                    (error, result) => {
-                        if (error) reject(error);
-                        else resolve(result);
-                    }
-                );
-                stream.end(req.file.buffer);
-            });
-
-            imagen_referencia = result.secure_url;
-        }
-
-        // Insertar servicio en Supabase
         const { data, error } = await supabase
             .from("servicios")
-            .insert([
-                {
-                    id_emprendimiento,
-                    nombre_servicio,
-                    descripcion,
-                    precio: parseFloat(precio),
-                    duracion,
-                    imagen_referencia
-                }
-            ])
-            .select();
+            .select(`
+                *,
+                emprendimientos (
+                    nombre_negocio,
+                    logo,
+                    usuarios (
+                        nombre
+                    )
+                )
+            `);
 
         if (error) throw error;
 
-        res.json({
-            mensaje: "Servicio creado con éxito",
-            servicio: data[0]
-        });
-    } catch (error) {
-        console.error("Error al crear servicio:", error.message);
-        res.status(500).send("Error al crear servicio");
+        const servicios = data.map(s => ({
+            id_servicio: s.id_servicio,
+            nombre: s.nombre_servicio,
+            descripcion: s.descripcion,
+            precio: s.precio,
+            duracion: s.duracion,
+            imagen_referencia: s.imagen_referencia,
+            nombre_emprendimiento: s.emprendimientos?.nombre_negocio,
+            logo_emprendimiento: s.emprendimientos?.logo,
+            nombre_proveedor: s.emprendimientos?.usuarios?.nombre
+        }));
+
+        res.json(servicios);
+    } catch (err) {
+        console.error("Error al obtener servicios:", err);
+        res.status(500).json({ mensaje: "Error al obtener servicios" });
     }
 });
 
-// Obtener todos los servicios
-router.get("/", autenticar, async (req, res) => {
+// Crear servicio
+router.post("/", autenticar, upload.single("imagen"), async (req, res) => {
     try {
+        console.log('📥 Creando servicio:', req.body);
+        
+        const { id_emprendimiento, nombre_servicio, descripcion, precio, duracion } = req.body;
+
+        if (!id_emprendimiento || !nombre_servicio || !precio) {
+            return res.status(400).json({ 
+                mensaje: "Faltan campos requeridos",
+                requeridos: ["id_emprendimiento", "nombre_servicio", "precio"]
+            });
+        }
+
+        let imagenUrl = null;
+
+        // Subir imagen a Cloudinary si existe
+        if (req.file) {
+            try {
+                const uploadResult = await new Promise((resolve, reject) => {
+                    const uploadStream = cloudinary.uploader.upload_stream(
+                        { 
+                            folder: "servicios",
+                            resource_type: "image"
+                        },
+                        (error, result) => {
+                            if (error) reject(error);
+                            else resolve(result);
+                        }
+                    );
+                    uploadStream.end(req.file.buffer);
+                });
+                imagenUrl = uploadResult.secure_url;
+                console.log('✅ Imagen subida:', imagenUrl);
+            } catch (error) {
+                console.error('❌ Error al subir imagen:', error);
+            }
+        }
+
+        const { data, error } = await supabase
+            .from("servicios")
+            .insert([{
+                id_emprendimiento: parseInt(id_emprendimiento, 10),
+                nombre_servicio,
+                descripcion: descripcion || null,
+                precio: parseFloat(precio),
+                duracion: duracion ? parseInt(duracion, 10) : null,
+                imagen_referencia: imagenUrl,
+                fecha_creacion: new Date()
+            }])
+            .select()
+            .single();
+
+        if (error) {
+            console.error('❌ Error de Supabase:', error);
+            throw error;
+        }
+
+        console.log('✅ Servicio creado:', data);
+
+        res.status(201).json({
+            mensaje: "Servicio creado con éxito",
+            servicio: data
+        });
+    } catch (err) {
+        console.error("❌ Error al crear servicio:", err);
+        res.status(500).json({ 
+            mensaje: "Error al crear servicio",
+            error: err.message
+        });
+    }
+});
+
+// Obtener servicio por ID
+router.get("/:id", async (req, res) => {
+    try {
+        const { id } = req.params;
 
         const { data, error } = await supabase
             .from("servicios")
             .select(`
                 *,
                 emprendimientos (
-                id_emprendimiento,
-                nombre_negocio,
-                usuarios (
-                    id_usuario,
-                    nombre
+                    id_emprendimiento,
+                    nombre_negocio,
+                    descripcion,
+                    domicilio,
+                    logo,
+                    id_proveedor,
+                    usuarios (
+                        id_usuario,
+                        nombre,
+                        correo,
+                        telefono
+                    )
                 )
-            )
-        `)
-            .eq('id_emprendimiento', req.usuario.id_emprendimiento)
-            .order("id_servicio", { ascending: true });
-
-        if (error) throw error;
-
-        const servicios = data.map((s) => ({
-            id_servicio: s.id_servicio,
-            id_emprendimiento: s.id_emprendimiento,
-            nombre: s.nombre_servicio,
-            descripcion: s.descripcion,
-            precio: s.precio,
-            duracion: s.duracion,
-            nombre_emprendimiento: s.emprendimientos?.nombre_negocio || "Sin nombre",
-            id_usuario: s.emprendimientos?.usuarios?.id_usuario || null,
-            nombre_proveedor: s.emprendimientos?.usuarios?.nombre || "Desconocido",
-            imagen_referencia: s.imagen_referencia
-        }));
-
-        res.json(servicios);
-    } catch (error) {
-        console.error("Error al obtener servicios:", error.message);
-        res.status(500).send("Error al obtener servicios");
-    }
-});
-
-// Obtener servicio por ID
-router.get("/:id", autenticar, async (req, res) => {
-    try {
-        const { id } = req.params;
-
-        const { data, error } = await supabase
-            .from("servicios")
-            .select("*, usuarios(id_usuario, nombre)")
+            `)
             .eq("id_servicio", id)
             .single();
 
-        if (error || !data) {
-            return res.status(404).send("Servicio no encontrado");
-        }
+        if (error) throw error;
 
         const servicio = {
-            id_servicio: data.id_servicio,
-            nombre: data.nombre_servicio,
-            descripcion: data.descripcion,
-            precio: data.precio,
-            duracion: data.duracion,
-            id_prestador: data.id_prestador,
-            prestador_nombre: data.usuarios?.nombre || "Desconocido",
-            imagen_referencia: data.imagen_referencia
+            ...data,
+            nombre_emprendimiento: data.emprendimientos?.nombre_negocio,
+            descripcion_emprendimiento: data.emprendimientos?.descripcion,
+            domicilio_emprendimiento: data.emprendimientos?.domicilio,
+            logo_emprendimiento: data.emprendimientos?.logo,
+            id_proveedor: data.emprendimientos?.id_proveedor,
+            nombre_proveedor: data.emprendimientos?.usuarios?.nombre,
+            correo_proveedor: data.emprendimientos?.usuarios?.correo,
+            telefono_proveedor: data.emprendimientos?.usuarios?.telefono
         };
 
         res.json(servicio);
-    } catch (error) {
-        console.error("Error al obtener servicio por ID:", error.message);
-        res.status(500).send("Error al obtener servicio por ID");
+    } catch (err) {
+        console.error("Error al obtener servicio:", err);
+        res.status(500).json({ mensaje: "Error al obtener servicio" });
+    }
+});
+
+// Obtener servicios por emprendimiento
+router.get("/emprendimiento/:empId", autenticar, async (req, res) => {
+    try {
+        const { empId } = req.params;
+
+        const { data, error } = await supabase
+            .from("servicios")
+            .select("*")
+            .eq("id_emprendimiento", empId);
+
+        if (error) throw error;
+
+        res.json(data);
+    } catch (err) {
+        console.error("Error al obtener servicios:", err);
+        res.status(500).json({ mensaje: "Error al obtener servicios" });
     }
 });
 
 // Actualizar servicio
-router.put("/:id", autenticar, upload.single(" imagen"), async (req, res) => {
+router.put("/:id", autenticar, upload.single("imagen"), async (req, res) => {
     try {
         const { id } = req.params;
-        const { nombre, descripcion, precio, duracion } = req.body;
-        const id_prestador = req.usuario.id_usuario;
-        let imagen_referencia = null;
+        const { nombre_servicio, descripcion, precio, duracion } = req.body;
 
-        if (!nombre || !descripcion || precio == null || !duracion) {
-            return res.status(400).send("Todos los campos son obligatorios");
-        }
+        let updateData = {
+            nombre_servicio,
+            descripcion,
+            precio: parseFloat(precio),
+            duracion: duracion ? parseInt(duracion, 10) : null
+        };
 
-        if (precio < 0) {
-            return res.status(400).send("El precio debe ser un valor positivo");
-        }
-
-        // Verificar si el servicio pertenece al usuario
-        const { data: servicioExistente, error: fetchError } = await supabase
-            .from("servicios")
-            .select("*")
-            .eq("id_servicio", id)
-            .eq("id_prestador", id_prestador)
-            .single();
-
-        if (fetchError || !servicioExistente) {
-            return res.status(403).send("No puedes actualizar este servicio");
-        }
-
-        // Subir nueva imagen a Cloudinary si se proporcionó
+        // Subir nueva imagen si existe
         if (req.file) {
-            const result = await new Promise((resolve, reject) => {
-                const stream = cloudinary.uploader.upload_stream(
+            const uploadResult = await new Promise((resolve, reject) => {
+                const uploadStream = cloudinary.uploader.upload_stream(
                     { folder: "servicios" },
                     (error, result) => {
                         if (error) reject(error);
                         else resolve(result);
                     }
                 );
-                stream.end(req.file.buffer);
+                uploadStream.end(req.file.buffer);
             });
-
-            imagen_referencia = result.secure_url;
-        }
-
-        // Actualizar servicio
-        const updateData = {
-            nombre: nombre || servicioExistente.nombre,
-            descripcion: descripcion || servicioExistente.descripcion,
-            precio: parseFloat(precio) || servicioExistente.precio,
-            duracion: duracion || servicioExistente.duracion
-        };
-
-        if (imagen_referencia) {
-            updateData.imagen_referencia = imagen_referencia;
+            updateData.imagen_referencia = uploadResult.secure_url;
         }
 
         const { data, error } = await supabase
             .from("servicios")
             .update(updateData)
             .eq("id_servicio", id)
-            .select();
+            .select()
+            .single();
 
         if (error) throw error;
 
         res.json({
-            mensaje: "Servicio actualizado con éxito",
-            servicio: data[0]
+            mensaje: "Servicio actualizado",
+            servicio: data
         });
-    } catch (error) {
-        console.error("Error al actualizar servicio:", error.message);
-        res.status(500).send("Error al actualizar servicio");
+    } catch (err) {
+        console.error("Error al actualizar servicio:", err);
+        res.status(500).json({ mensaje: "Error al actualizar servicio" });
     }
 });
 
@@ -235,43 +235,18 @@ router.put("/:id", autenticar, upload.single(" imagen"), async (req, res) => {
 router.delete("/:id", autenticar, async (req, res) => {
     try {
         const { id } = req.params;
-        const id_emprendimiento = req.usuario.id_emprendimiento;
 
-        // Verificar si el servicio pertenece al emprendimiento del usuario autenticado
-        const { data: servicioExistente, error: fetchError } = await supabase
-            .from("servicios")
-            .select("*")
-            .eq("id_servicio", id)
-            .eq("id_emprendimiento", id_emprendimiento)
-
-            .single();
-
-        if (fetchError || !servicioExistente) {
-            return res.status(403).send("No puedes eliminar este servicio");
-        }
-
-        // Eliminar imagen de Cloudinary si existe
-        if (servicioExistente.imagen_referencia) {
-            const publicId = servicioExistente.imagen_referencia.split("/").pop().split(".")[0];
-            await cloudinary.uploader.destroy(`servicios/${publicId}`);
-        }
-
-        // Eliminar el servicio
-        const { data, error } = await supabase
+        const { error } = await supabase
             .from("servicios")
             .delete()
-            .eq("id_servicio", id)
-            .select();
+            .eq("id_servicio", id);
 
         if (error) throw error;
 
-        res.json({
-            mensaje: "Servicio eliminado con éxito",
-            servicio: data[0]
-        });
-    } catch (error) {
-        console.error("Error al eliminar servicio:", error.message);
-        res.status(500).send("Error al eliminar servicio");
+        res.json({ mensaje: "Servicio eliminado con éxito" });
+    } catch (err) {
+        console.error("Error al eliminar servicio:", err);
+        res.status(500).json({ mensaje: "Error al eliminar servicio" });
     }
 });
 
