@@ -1,6 +1,7 @@
-<!-- src/views/Home.vue - VERSIÓN RESPONSIVE -->
+<!-- src/views/Home.vue - VERSIÓN CORREGIDA -->
 <template>
     <div class="home-page">
+        <!-- Navbar se renderiza automáticamente desde App.vue -->
         <main class="main-content">
             <h2 class="titulo-bienvenida">Bienvenido a OaxacaGlow</h2>
             <p class="descripcion-home">
@@ -57,9 +58,11 @@ export default {
     align-items: center;
     position: relative;
     overflow: hidden;
+    /* Ajuste importante: padding-top para el navbar */
     padding: 80px 20px 40px;
 }
 
+/* CORRECCIÓN: Eliminar el z-index alto y ajustar el overlay */
 .main-content::before {
     content: "";
     position: absolute;
@@ -68,12 +71,14 @@ export default {
     right: 0;
     bottom: 0;
     background: rgba(255, 255, 255, 0.7);
-    z-index: 1;
+    /* z-index removido o reducido */
+    z-index: 0; /* Cambiado de 1 a 0 */
 }
 
+/* CORRECCIÓN: Ajustar z-index del contenido */
 .main-content > * {
     position: relative;
-    z-index: 2;
+    z-index: 1; /* Reducido de 2 a 1 */
 }
 
 /* Título responsive */
@@ -156,7 +161,7 @@ export default {
     backdrop-filter: blur(10px);
     margin: 0;
     display: block;
-    z-index: 2;
+    z-index: 2; /* Este z-index está bien para los botones */
     line-height: 1.4;
 }
 

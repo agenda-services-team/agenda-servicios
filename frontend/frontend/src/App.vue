@@ -1,67 +1,63 @@
-<!-- src/App.vue -->
+<!-- src/App.vue - VERSIÓN CORREGIDA -->
 <template>
   <div id="app">
-    <!-- Layout del dashboard (proveedores) -->
-    <router-view v-if="$route.path.startsWith('/dashboard')" />
+    <!-- Navbar global (excepto en auth routes) -->
+    <Navbar v-if="showGlobalNavbar" />
+    
+    <!-- Contenido principal -->
+    <main>
+      <router-view />
+    </main>
 
-    <!-- Resto de páginas -->
-    <template v-else>
-      <!-- Navbar: cambia según autenticación -->
-      <Navbar v-if="!isAuthenticated && !isCustomLayoutRoute" />
-<ClientNavbar v-else-if="isClient && !isCustomLayoutRoute" />
-
-
-      <!-- Contenido -->
-      <main :class="{ 'no-padding': isAuthRoute }">
-        <router-view />
-      </main>
-
-      <!-- Footer solo en páginas públicas o de cliente -->
-      <Footer v-if="!isAuthRoute" />
-    </template>
+    <!-- Footer global (excepto en auth routes) -->
+    <Footer v-if="showGlobalFooter" />
   </div>
 </template>
 
 <script>
-import Navbar from './components/Navbar.vue';
-import ClientNavbar from './components/ClientNavbar.vue';
-import { useAuthStore } from './store';
 import { computed } from 'vue';
+import { useRoute } from 'vue-router';
+import Navbar from './components/Navbar.vue';
+import Footer from './components/Footer.vue';
 
 export default {
   name: "App",
-  components: { Navbar, ClientNavbar },
+  components: { 
+    Navbar, 
+    Footer 
+  },
   setup() {
-    const authStore = useAuthStore();
+    const route = useRoute();
 
-    const isProveedor = computed(() => authStore.isProveedor);
-    const isClient = computed(() => authStore.isCliente);
-    const isCustomLayoutRoute = computed(() => {
-      const customRoutes = ['/login', '/registro', '/', '/servicios'];
-      return customRoutes.includes(window.location.pathname) || 
-             window.location.pathname.startsWith('/servicio/');
-    });
+    const isAuthRoute = computed(() => 
+      ['/login', '/registro'].includes(route.path)
+    );
+
+    const showGlobalNavbar = computed(() => !isAuthRoute.value);
+    const showGlobalFooter = computed(() => !isAuthRoute.value);
 
     return {
-      authStore,
-      isProveedor,
-      isClient,
-      isCustomLayoutRoute
+      showGlobalNavbar,
+      showGlobalFooter
     };
   }
 };
 </script>
 
 <style>
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
 #app {
   width: 100%;
   min-height: 100vh;
-  margin: 0;
-  padding: 0;
-  text-align: left;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
 }
 
-.no-padding {
-  padding-top: 0;
+main {
+  flex: 1;
 }
 </style>
