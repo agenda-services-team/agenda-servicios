@@ -25,37 +25,29 @@
 <script>
 import Navbar from './components/Navbar.vue';
 import ClientNavbar from './components/ClientNavbar.vue';
-import Footer from './components/Footer.vue';
-import { computed } from 'vue';
-import { useRoute } from 'vue-router';
 import { useAuthStore } from './store';
+import { computed } from 'vue';
 
 export default {
   name: "App",
-  components: { Navbar, ClientNavbar, Footer },
+  components: { Navbar, ClientNavbar },
   setup() {
-    const route = useRoute();
-    const store = useAuthStore();
+    const authStore = useAuthStore();
 
-    // Detecta si está en login o registro
-    const isAuthRoute = computed(() =>
-      route.path === '/login' || route.path === '/registro'
-    );
-
-    // Detecta si hay sesión activa
-    const isAuthenticated = computed(() => store.isAuthenticated);
-
-    // Detecta si el usuario es cliente (no proveedor)
-    const isClient = computed(() => {
-      const tipo = localStorage.getItem('tipo_usuario');
-      return tipo === 'cliente' || tipo === 'usuario';
+    const isProveedor = computed(() => authStore.isProveedor);
+    const isClient = computed(() => authStore.isCliente);
+    const isCustomLayoutRoute = computed(() => {
+      const customRoutes = ['/login', '/registro', '/', '/servicios'];
+      return customRoutes.includes(window.location.pathname) || 
+             window.location.pathname.startsWith('/servicio/');
     });
-    const isCustomLayoutRoute = computed(() =>
-      route.path.startsWith('/servicios')
-    )
 
-
-    return { route, isAuthRoute, isAuthenticated, isClient };
+    return {
+      authStore,
+      isProveedor,
+      isClient,
+      isCustomLayoutRoute
+    };
   }
 };
 </script>
