@@ -1,63 +1,57 @@
-<!-- src/App.vue - VERSIÓN CORREGIDA -->
 <template>
   <div id="app">
-    <!-- Navbar global (excepto en auth routes) -->
-    <Navbar v-if="showGlobalNavbar" />
-    
-    <!-- Contenido principal -->
-    <main>
-      <router-view />
-    </main>
+    <!-- Renderiza directamente el router-view para rutas de dashboard -->
+    <router-view v-if="$route.path.startsWith('/dashboard')" />
 
-    <!-- Footer global (excepto en auth routes) -->
-    <Footer v-if="showGlobalFooter" />
+    <!-- Para otras rutas, muestra Navbar, contenido y Footer -->
+    <template v-else>
+      <Navbar v-if="$route.path !== '/login' && $route.path !== '/registro'" />
+      <main
+        :class="{ 'main-content': !$route.path.startsWith('/dashboard'), 'no-padding': $route.path === '/login' || $route.path === '/registro' }">
+        <router-view />
+      </main>
+      <Footer v-if="$route.path !== '/login' && $route.path !== '/registro'" />
+    </template>
   </div>
 </template>
 
 <script>
-import { computed } from 'vue';
-import { useRoute } from 'vue-router';
 import Navbar from './components/Navbar.vue';
 import Footer from './components/Footer.vue';
+import { computed } from 'vue';
+import { useRoute } from 'vue-router'; // Importar useRoute
+import { useAuthStore } from './store';
 
 export default {
   name: "App",
-  components: { 
-    Navbar, 
-    Footer 
-  },
+  components: { Navbar, Footer },
   setup() {
+    const store = useAuthStore();
     const route = useRoute();
-
-    const isAuthRoute = computed(() => 
-      ['/login', '/registro'].includes(route.path)
-    );
-
-    const showGlobalNavbar = computed(() => !isAuthRoute.value);
-    const showGlobalFooter = computed(() => !isAuthRoute.value);
-
-    return {
-      showGlobalNavbar,
-      showGlobalFooter
+    const isAuth = computed(() => store.isAuthenticated);
+    const logout = () => {
+      store.logout();
     };
+    return { isAuth, route };
   }
-};
+}
 </script>
 
 <style>
-* {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
-}
-
 #app {
-  width: 100%;
+  font-family: Arial, sans-serif;
+  display: flex;
+  flex-direction: column;
   min-height: 100vh;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
 }
 
-main {
+.main-content {
   flex: 1;
+  padding-top: 80px;
+  margin: 0 auto;
+}
+
+.no-padding {
+  padding-top: 0;
 }
 </style>

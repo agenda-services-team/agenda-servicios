@@ -1,179 +1,22 @@
-<!-- src/views/Servicios.vue - CON HEADER INTEGRADO -->
 <template>
-    <div class="services-page">
-        <!-- Header integrado con buscador y menú usuario -->
-        <header class="services-header">
-            <div class="header-content">
-                <!-- Logo y título -->
-                <div class="header-left">
-                    <router-link to="/servicios" class="logo-link">
-                        <img src="/src/assets/logo.png" alt="OaxacaGlow" class="logo-img" />
-                        <span class="logo-text">OaxacaGlow</span>
-                    </router-link>
-                </div>
+    <div class="services-header">
+        <h1 class="services-title">Mis Servicios</h1>
+        <br>
+    </div>
 
-                <!-- Buscador centrado -->
-                <div class="header-center">
-                    <div class="search-container">
-                        <svg class="search-icon" width="20" height="20" viewBox="0 0 24 24" fill="none"
-                            stroke="currentColor">
-                            <circle cx="11" cy="11" r="8"></circle>
-                            <path d="m21 21-4.3-4.3"></path>
-                        </svg>
-                        <input v-model="filtroBusqueda" type="text" placeholder="Buscar servicios..."
-                            class="search-input">
-                    </div>
-                </div>
-
-                <!-- Menú de usuario -->
-                <div class="header-right">
-                    <div class="user-menu">
-                        <!-- Avatar y nombre -->
-                        <div class="user-info" @click="toggleUserMenu">
-                            <div class="user-avatar">
-                                {{ userInitials }}
-                            </div>
-                            <span class="user-name">{{ userName }}</span>
-                            <svg class="chevron-icon" width="16" height="16" viewBox="0 0 24 24" fill="none"
-                                stroke="currentColor">
-                                <polyline points="6 9 12 15 18 9"></polyline>
-                            </svg>
-                        </div>
-
-                        <!-- Menú desplegable -->
-                        <div class="user-dropdown" :class="{ 'dropdown-open': userMenuOpen }">
-                            <router-link to="/mis-citas" class="dropdown-item" @click="closeUserMenu">
-                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                                    <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
-                                    <line x1="16" y1="2" x2="16" y2="6"></line>
-                                    <line x1="8" y1="2" x2="8" y2="6"></line>
-                                    <line x1="3" y1="10" x2="21" y2="10"></line>
-                                </svg>
-                                Mis Citas
-                            </router-link>
-
-                            <router-link to="/perfil" class="dropdown-item" @click="closeUserMenu">
-                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
-                                    <circle cx="12" cy="7" r="4"></circle>
-                                </svg>
-                                Mi Perfil
-                            </router-link>
-
-                            <div class="dropdown-divider"></div>
-
-                            <button @click="handleLogout" class="dropdown-item logout-item">
-                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                                    <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
-                                    <polyline points="16,17 21,12 16,7"></polyline>
-                                    <line x1="21" y1="12" x2="9" y2="12"></line>
-                                </svg>
-                                Cerrar Sesión
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </header>
-        <!-- 🆕 DETECTAR SI ESTAMOS EN RUTAS TEMPORALES -->
-        <div v-if="$route.name === 'mis-citas'" class="temporary-page">
-            <div class="temporary-content">
-                <div class="temporary-icon">📅</div>
-                <h1>Mis Citas</h1>
-                <p>Esta funcionalidad estará disponible pronto.</p>
-                <p>Mientras tanto, puedes explorar nuestros servicios.</p>
-                <button @click="$router.push('/servicios')" class="back-to-services">
-                    Explorar Servicios
-                </button>
-            </div>
-        </div>
-
-        <div v-else-if="$route.name === 'perfil'" class="temporary-page">
-            <div class="temporary-content">
-                <div class="temporary-icon">👤</div>
-                <h1>Mi Perfil</h1>
-                <p>Esta funcionalidad estará disponible pronto.</p>
-                <p>Pronto podrás editar tu información personal.</p>
-                <button @click="$router.push('/servicios')" class="back-to-services">
-                    Volver a Servicios
-                </button>
-            </div>
-        </div>
-
-        <!-- Contenido principal (sin cambios) -->
-        <div class="services-content">
-            <!-- Título y contador -->
-            <div class="page-title-section">
-                <h1 class="page-title">Servicios Disponibles</h1>
-                <p class="page-subtitle">Descubre los mejores servicios en OaxacaGlow</p>
-                <div class="services-count">
-                    <span class="count-badge">{{ servicios.length }} servicios encontrados</span>
-                </div>
-            </div>
-
-            <!-- Estado de carga -->
-            <div v-if="loading" class="loading-container">
-                <div class="loading-spinner"></div>
-                <p class="loading-text">Cargando servicios...</p>
-            </div>
-
-            <!-- Contenido principal -->
-            <div v-else class="services-main">
-                <!-- Mensaje cuando no hay servicios -->
-                <div v-if="serviciosFiltrados.length === 0" class="empty-state">
-                    <div class="empty-icon">🔍</div>
-                    <h3>No se encontraron servicios</h3>
-                    <p v-if="filtroBusqueda">Intenta con otros términos de búsqueda</p>
-                    <p v-else>Pronto tendremos nuevos servicios disponibles</p>
-                    <button @click="cargarServicios" class="retry-btn">Reintentar</button>
-                </div>
-
-                <!-- Grid de servicios -->
-                <div v-else class="services-grid">
-                    <div v-for="servicio in serviciosFiltrados" :key="servicio.id_servicio" class="service-card"
-                        @click="verDetalleServicio(servicio)">
-                        <!-- Contenido de la tarjeta (sin cambios) -->
-                        <div class="card-image-container">
-                            <img :src="servicio.imagen_referencia || '/src/images/default-service.jpg'"
-                                :alt="servicio.nombre" class="service-image" @error="handleImageError" />
-                            <div class="image-overlay">
-                                <span class="view-details">Ver detalles</span>
-                            </div>
-                            <div class="price-tag">
-                                ${{ servicio.precio }}
-                            </div>
-                        </div>
-
-                        <div class="card-content">
-                            <div class="service-header">
-                                <h3 class="service-name">{{ servicio.nombre }}</h3>
-                                <div class="duration-badge">
-                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                                        <circle cx="12" cy="12" r="10"></circle>
-                                        <polyline points="12 6 12 12 16 14"></polyline>
-                                    </svg>
-                                    {{ servicio.duracion }}min
-                                </div>
-                            </div>
-
-                            <p class="service-description">{{ servicio.descripcion }}</p>
-
-                            <div class="service-footer">
-                                <div class="provider-info">
-                                    <div class="provider-avatar">
-                                        {{ getInitials(servicio.nombre_proveedor) }}
-                                    </div>
-                                    <div class="provider-details">
-                                        <span class="provider-name">{{ servicio.nombre_proveedor }}</span>
-                                        <span class="provider-business">{{ servicio.nombre_emprendimiento }}</span>
-                                    </div>
-                                </div>
-                                <button class="reserve-btn" @click.stop="reservarServicio(servicio)">
-                                    Reservar
-                                </button>
-                            </div>
-                        </div>
-                    </div>
+    <div class="row">
+        <div v-for="servicio in servicios" :key="servicio.id_servicio || servicio.id" class="card me-3"
+            style="width: 18rem;">
+            <img :src="servicio.imagen_referencia || servicio.imagen || '/images/default-service.jpg'"
+                class="card-img-top" alt="Imagen del servicio" />
+            <div class="card-body">
+                <h5 class="card-title">{{ servicio.nombre }}</h5>
+                <p class="card-text">{{ servicio.descripcion }}</p>
+                <div class="mt-2">
+                    <a href="#" class="btn btn-primary me-2">Ver más</a>
+                    <a href="#" class="btn btn-danger" @click.prevent="eliminarServicio(servicio.id_servicio)">
+                        Eliminar
+                    </a>
                 </div>
             </div>
         </div>
@@ -181,651 +24,89 @@
 </template>
 
 <script>
-import { useAuthStore } from '../store';
-import { mapState, mapActions } from 'pinia';
-
 export default {
     data() {
         return {
-            servicios: [],
-            loading: true,
-            filtroBusqueda: '',
-            userMenuOpen: false
+            servicios: []
         }
     },
-    computed: {
-        ...mapState(useAuthStore, ['userName']),
-        serviciosFiltrados() {
-            if (!this.filtroBusqueda) return this.servicios;
-
-            const searchTerm = this.filtroBusqueda.toLowerCase();
-            return this.servicios.filter(servicio =>
-                servicio.nombre.toLowerCase().includes(searchTerm) ||
-                servicio.descripcion.toLowerCase().includes(searchTerm) ||
-                servicio.nombre_proveedor.toLowerCase().includes(searchTerm) ||
-                servicio.nombre_emprendimiento.toLowerCase().includes(searchTerm)
-            );
-        },
-        userInitials() {
-            return this.userName
-                ?.split(' ')
-                .map(word => word[0])
-                .join('')
-                .toUpperCase()
-                .substring(0, 2) || 'US';
-        }
-    },
-    async mounted() {
-        await this.cargarServicios();
-        document.addEventListener('click', this.handleClickOutside);
-    },
-    beforeUnmount() {
-        document.removeEventListener('click', this.handleClickOutside);
+    mounted() {
+        this.cargarServicios();
     },
     methods: {
-        ...mapActions(useAuthStore, ['logout']),
         async cargarServicios() {
-            this.loading = true;
             try {
-                const endpoint = "http://localhost:4000/api/servicios/public/todos";
-                const respuesta = await fetch(endpoint, {
+                const token = localStorage.getItem("token");
+                const respuesta = await fetch("http://localhost:4000/api/servicios", {
                     headers: {
+                        "Authorization": `Bearer ${token}`,
                         "Content-Type": "application/json"
-                    },
-                    method: 'GET'
+                    }
+                });
+
+                console.log("Código de respuesta:", respuesta.status);
+
+                if (!respuesta.ok) throw new Error("Error al obtener los servicios");
+
+                const data = await respuesta.json();
+                console.log("Servicios obtenidos:", data);
+
+                this.servicios = data;
+            } catch (error) {
+                console.error("Error al cargar los servicios:", error);
+            }
+        },
+        async eliminarServicio(id) {
+            if (!confirm("¿Seguro que deseas eliminar este servicio?")) {
+                return;
+            }
+
+            try {
+                const token = localStorage.getItem("token");
+                console.log("Usuario autenticado:", req.usuario);
+
+                const respuesta = await fetch(`http://localhost:4000/api/servicios/${id}`, {
+                    method: "DELETE",
+                    headers: {
+                        "Authorization": `Bearer ${token}`,
+                        "Content-Type": "application/json"
+                    }
                 });
 
                 if (!respuesta.ok) {
-                    throw new Error(`Error ${respuesta.status}`);
+                    const mensaje = await respuesta.text();
+                    throw new Error(mensaje || "Error al eliminar el servicio");
                 }
 
-                const data = await respuesta.json();
-                console.log('📦 Servicios cargados:', data); // Para debug
-                this.servicios = data;
+                // Eliminar el servicio de la lista local
+                this.servicios = this.servicios.filter(s => s.id_servicio !== id);
+
+                alert("Servicio eliminado con éxito");
             } catch (error) {
-                console.error('Error al cargar servicios:', error);
-            } finally {
-                this.loading = false;
+                console.error("Error al eliminar servicio:", error);
+                alert("No se pudo eliminar el servicio");
             }
-        },
-
-        // 🆕 MÉTODO MEJORADO PARA MANEJAR IMÁGENES
-        getImageUrl(imagePath) {
-            if (!imagePath) {
-                return this.getDefaultImage();
-            }
-            
-            // Si ya es una URL completa (http o https)
-            if (imagePath.startsWith('http')) {
-                return imagePath;
-            }
-            
-            // Si es una ruta local
-            if (imagePath.startsWith('/')) {
-                return imagePath;
-            }
-            
-            // Si es de Cloudinary (contiene 'upload' en la URL)
-            if (imagePath.includes('upload')) {
-                // Asegurar que sea URL completa de Cloudinary
-                if (!imagePath.startsWith('http')) {
-                    return `https://res.cloudinary.com/${imagePath}`;
-                }
-                return imagePath;
-            }
-            
-            // Por defecto
-            return this.getDefaultImage();
-        },
-
-        // 🆕 IMAGEN POR DEFECTO MEJORADA
-        getDefaultImage() {
-            // Usar imagen de placeholder online
-            return 'https://images.unsplash.com/photo-1560066984-138dadb4c035?w=400&h=300&fit=crop&auto=format';
-        },
-
-        // 🆕 MANEJO DE ERRORES MEJORADO
-        handleImageError(event) {
-            console.warn('❌ Error cargando imagen:', event.target.src);
-            event.target.src = this.getDefaultImage();
-            // Prevenir bucles de error
-            event.target.onerror = null;
-        },
-
-        getInitials(nombre) {
-            return nombre
-                ?.split(' ')
-                .map(word => word[0])
-                .join('')
-                .toUpperCase()
-                .substring(0, 2) || 'PR';
-        },
-
-        verDetalleServicio(servicio) {
-            if (servicio && servicio.id_servicio) {
-                this.$router.push({ name: 'servicio-detalle', params: { id: servicio.id_servicio } });
-            } else {
-                console.log('Ver detalle (sin id):', servicio);
-            }
-        },
-
-        reservarServicio(servicio) {
-            console.log('Reservar servicio:', servicio);
-            // 🆕 Redirigir al detalle para reservar
-            this.verDetalleServicio(servicio);
-        },
-
-        toggleUserMenu() {
-            this.userMenuOpen = !this.userMenuOpen;
-        },
-
-        closeUserMenu() {
-            this.userMenuOpen = false;
-        },
-
-        handleClickOutside(event) {
-            if (!event.target.closest('.user-menu')) {
-                this.userMenuOpen = false;
-            }
-        },
-
-        handleLogout() {
-            this.logout();
-            this.$router.push('/');
         }
     }
-}
+};
 </script>
 
+
 <style scoped>
-/* ========== HEADER INTEGRADO ========== */
 .services-header {
-    background: white;
-    box-shadow: 0 2px 20px rgba(0, 0, 0, 0.08);
-    position: sticky;
-    top: 0;
-    z-index: 1000;
-    padding: 1rem 0;
-}
-
-.header-content {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    max-width: 1200px;
-    margin: 0 auto;
-    padding: 0 2rem;
-    gap: 2rem;
+    margin-bottom: 30px;
 }
 
-/* Logo */
-.header-left {
-    flex-shrink: 0;
-}
-
-.logo-link {
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
-    text-decoration: none;
-    color: #791236;
-}
-
-.logo-img {
-    height: 35px;
-    width: auto;
-}
-
-.logo-text {
-    font-size: 1.5rem;
-    font-weight: 800;
-    letter-spacing: -0.5px;
-}
-
-/* Buscador */
-.header-center {
-    flex: 1;
-    max-width: 500px;
-}
-
-.search-container {
-    position: relative;
-    width: 100%;
-}
-
-.search-icon {
-    position: absolute;
-    left: 16px;
-    top: 50%;
-    transform: translateY(-50%);
-    color: #666;
-    z-index: 2;
-}
-
-.search-input {
-    width: 100%;
-    padding: 0.85rem 1rem 0.85rem 3rem;
-    border: 2px solid #e8ecef;
-    border-radius: 30px;
-    font-size: 1rem;
-    background: #f8fafc;
-    transition: all 0.3s ease;
-    color: #333;
-    font-weight: 500;
-}
-
-.search-input:focus {
-    outline: none;
-    border-color: #791236;
-    background: white;
-    box-shadow: 0 0 0 4px rgba(121, 18, 54, 0.1);
-}
-
-/* Menú de usuario */
-.header-right {
-    flex-shrink: 0;
-}
-
-.user-menu {
-    position: relative;
-}
-
-.user-info {
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
-    padding: 0.5rem 1rem;
-    border-radius: 25px;
-    background: #f8fafc;
-    cursor: pointer;
-    transition: all 0.3s ease;
-    border: 2px solid transparent;
-}
-
-.user-info:hover {
-    background: white;
-    border-color: #e8ecef;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-}
-
-.user-avatar {
-    width: 40px;
-    height: 40px;
-    background: linear-gradient(135deg, #791236, #553a6a);
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: white;
-    font-weight: 700;
-    font-size: 0.9rem;
-    flex-shrink: 0;
-}
-
-.user-name {
-    font-weight: 600;
-    color: #333;
-    font-size: 0.9rem;
-}
-
-.chevron-icon {
-    color: #666;
-    transition: transform 0.3s ease;
-}
-
-.user-dropdown {
-    position: absolute;
-    top: 100%;
-    right: 0;
-    background: white;
-    border-radius: 16px;
-    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
-    padding: 0.75rem;
-    min-width: 200px;
-    display: none;
-    border: 1px solid #f0f0f0;
-    margin-top: 0.5rem;
-    z-index: 1001;
-}
-
-.user-dropdown.dropdown-open {
-    display: block;
-    animation: slideDown 0.3s ease;
-}
-
-.dropdown-item {
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
-    padding: 0.75rem 1rem;
-    text-decoration: none;
-    color: #444;
-    font-weight: 500;
-    border-radius: 8px;
-    transition: all 0.3s ease;
-    border: none;
-    background: none;
-    cursor: pointer;
-    width: 100%;
-    text-align: left;
-    font-size: 0.9rem;
-}
-
-.dropdown-item:hover {
-    background: linear-gradient(135deg, #fce9ee, #f8f0f3);
-    color: #791236;
-}
-
-.logout-item:hover {
-    background: linear-gradient(135deg, #fee, #fff5f5);
-    color: #dc3545;
-}
-
-.dropdown-divider {
-    height: 1px;
-    background: #f0f0f0;
-    margin: 0.5rem 0;
-}
-
-@keyframes slideDown {
-    from {
-        opacity: 0;
-        transform: translateY(-10px);
-    }
-
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
-}
-
-/* ========== CONTENIDO PRINCIPAL ========== */
-.services-page {
-    min-height: 100vh;
-    background: linear-gradient(135deg, #f6fbfb 0%, #f0f7ff 100%);
-}
-
-.services-content {
-    padding: 2rem;
-    max-width: 1200px;
-    margin: 0 auto;
-}
-
-.page-title-section {
-    text-align: center;
-    margin-bottom: 3rem;
-}
-
-.page-title {
-    font-size: clamp(1.8rem, 5vw, 2.5rem);
-    font-weight: 800;
-    background: linear-gradient(135deg, #791236 0%, #553a6a 100%);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    margin-bottom: 0.5rem;
-    line-height: 1.2;
-}
-
-.page-subtitle {
-    font-size: clamp(0.9rem, 2.5vw, 1.1rem);
-    color: #666;
-    margin-bottom: 1.5rem;
-    line-height: 1.4;
-}
-
-.services-count {
-    display: inline-flex;
-}
-
-.count-badge {
-    background: #791236;
-    color: white;
-    padding: 0.5rem 1.5rem;
-    border-radius: 20px;
-    font-size: clamp(0.8rem, 2vw, 0.9rem);
-    font-weight: 600;
-}
-
-/* Grid de servicios */
-.services-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
-    gap: 2rem;
-}
-
-.service-card {
-    background: white;
-    border-radius: 16px;
-    overflow: hidden;
-    cursor: pointer;
-    transition: all 0.3s ease;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
-}
-
-.service-card:hover {
-    transform: translateY(-4px);
-    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.12);
-}
-
-.card-image-container {
-    position: relative;
-    width: 100%;
-    aspect-ratio: 16/9;
-    overflow: hidden;
-}
-
-.service-image {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    transition: all 0.3s ease;
-}
-
-.image-overlay {
-    position: absolute;
-    inset: 0;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: white;
-    font-weight: 700;
-    opacity: 0;
-    background: rgba(0, 0, 0, 0.35);
-    transition: opacity 0.3s ease;
-}
-
-.card-image-container:hover .image-overlay {
-    opacity: 1;
-}
-
-.price-tag {
-    position: absolute;
-    bottom: 12px;
-    right: 12px;
-    background: #791236;
-    color: white;
-    padding: 0.3rem 0.75rem;
-    border-radius: 12px;
-    font-weight: 600;
-    font-size: 0.85rem;
-}
-
-/* Contenido de tarjeta */
-.card-content {
-    padding: 1rem;
-    display: flex;
-    flex-direction: column;
-    gap: 0.5rem;
-}
-
-.service-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    gap: 1rem;
-}
-
-.duration-badge {
-    display: flex;
-    align-items: center;
-    gap: 0.25rem;
-    background: #f3f4f6;
-    padding: 0.2rem 0.5rem;
-    border-radius: 12px;
-    font-size: 0.75rem;
-    font-weight: 600;
-}
-
-.service-description {
-    font-size: 0.9rem;
-    color: #555;
-}
-
-.service-footer {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-top: auto;
-}
-
-.provider-info {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-}
-
-.provider-avatar {
-    width: 32px;
-    height: 32px;
-    border-radius: 50%;
-    background: #791236;
-    color: white;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 0.75rem;
+.services-title {
+    color: #553a6a;
+    font-size: 1.8rem;
     font-weight: 700;
 }
 
-.reserve-btn {
-    background: #791236;
-    color: white;
-    border: none;
-    border-radius: 12px;
-    padding: 0.4rem 0.8rem;
-    cursor: pointer;
-    font-weight: 600;
-    transition: all 0.3s ease;
-}
-
-.reserve-btn:hover {
-    background: #553a6a;
-}
-
-/** otros*/
-
-.temporary-page {
-    min-height: 80vh;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 2rem;
-}
-
-.temporary-content {
-    text-align: center;
-    max-width: 500px;
-    padding: 3rem 2rem;
-    background: white;
-    border-radius: 20px;
-    box-shadow: 0 10px 40px rgba(0,0,0,0.1);
-}
-
-.temporary-icon {
-    font-size: 4rem;
-    margin-bottom: 1.5rem;
-}
-
-.temporary-content h1 {
-    font-size: 2.5rem;
-    font-weight: 800;
-    background: linear-gradient(135deg, #791236 0%, #553a6a 100%);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    margin-bottom: 1rem;
-}
-
-.temporary-content p {
-    color: #666;
-    font-size: 1.1rem;
-    margin-bottom: 0.5rem;
-    line-height: 1.5;
-}
-
-.back-to-services {
-    background: #791236;
-    color: white;
-    border: none;
-    padding: 1rem 2rem;
-    border-radius: 12px;
-    font-weight: 600;
-    cursor: pointer;
-    margin-top: 2rem;
-    transition: all 0.3s ease;
-}
-
-.back-to-services:hover {
-    background: #553a6a;
-    transform: translateY(-2px);
-}
-
-/* ========== RESPONSIVE ========== */
-@media (max-width:768px) {
-    .header-content {
-        padding: 0 1rem;
-        gap: 1rem;
-    }
-
-    .logo-text,
-    .user-name {
-        display: none;
-    }
-
-    .search-input {
-        padding-left: 2.5rem;
-    }
-
-    .services-content {
-        padding: 1rem;
-    }
-}
-
-@media (max-width:480px) {
-    .header-center {
-        display: none;
-    }
-
-    .services-content {
-        padding: 0.5rem;
-    }
-
-    .services-grid {
-        grid-template-columns: 1fr;
-        gap: 1rem;
-    }
-
-    .service-header {
-        flex-direction: column;
-        align-items: flex-start;
-        gap: 0.5rem;
-    }
-
-    .duration-badge {
-        align-self: flex-start;
-    }
-
-    .provider-business {
-        display: none;
-    }
+.card {
+    margin-bottom: 20px;
 }
 </style>

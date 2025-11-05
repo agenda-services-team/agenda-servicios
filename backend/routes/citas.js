@@ -4,68 +4,10 @@ import { autenticar } from "../middleware/auth.js";
 
 const router = express.Router();
 
-// 🆕 ENDPOINT PARA OBTENER HORARIOS DISPONIBLES
-router.get("/disponibilidad/:servicioId/:fecha", async (req, res) => {
-    try {
-        const { servicioId, fecha } = req.params;
-        
-        console.log(`🔍 Consultando disponibilidad - Servicio: ${servicioId}, Fecha: ${fecha}`);
-
-        // Validar fecha
-        const fechaCita = new Date(fecha);
-        const fechaHoy = new Date();
-        fechaHoy.setHours(0, 0, 0, 0);
-        
-        if (fechaCita < fechaHoy) {
-            return res.status(400).json({ 
-                error: "No puedes consultar fechas pasadas" 
-            });
-        }
-
-        // Obtener citas existentes para ese servicio y fecha
-        const { data: citasExistentes, error } = await supabase
-            .from("citas")
-            .select("hora")
-            .eq("id_servicio", servicioId)
-            .eq("fecha", fecha)
-            .eq("estado", "activa");
-
-        if (error) {
-            console.error("❌ Error consultando citas:", error);
-            throw error;
-        }
-
-        // Extraer horas ocupadas
-        const horasOcupadas = citasExistentes.map(cita => cita.hora);
-        console.log(`⏰ Horas ocupadas para ${fecha}:`, horasOcupadas);
-
-        // Generar todos los horarios posibles (8:00 AM a 8:00 PM)
-        const todosLosHorarios = [];
-        for (let hora = 8; hora <= 20; hora++) {
-            todosLosHorarios.push(`${hora.toString().padStart(2, '0')}:00`);
-        }
-
-        // Filtrar horarios disponibles
-        const horariosDisponibles = todosLosHorarios.filter(
-            horario => !horasOcupadas.includes(horario)
-        );
-
-        console.log(`✅ Horarios disponibles: ${horariosDisponibles.length}`);
-
-        res.json(horariosDisponibles);
-
-    } catch (error) {
-        console.error("💥 Error al obtener disponibilidad:", error.message);
-        res.status(500).json({ 
-            error: "Error al obtener horarios disponibles" 
-        });
-    }
-});
-
-// Crear una cita (ACTUALIZADO para aceptar mensaje)
+// Crear una cita
 router.post("/", autenticar, async (req, res) => {
     try {
-        const { id_servicio, fecha, hora, mensaje } = req.body;
+        const { id_servicio, fecha, hora } = req.body;
         const id_cliente = req.usuario.id_usuario;
 
         if (!id_servicio || !fecha || !hora)
@@ -86,8 +28,7 @@ router.post("/", autenticar, async (req, res) => {
             .select("*")
             .eq("id_servicio", id_servicio)
             .eq("fecha", fecha)
-            .eq("hora", hora)
-            .eq("estado", "activa");
+            .eq("hora", hora);
 
         if (errorSelect) throw errorSelect;
 
@@ -96,15 +37,7 @@ router.post("/", autenticar, async (req, res) => {
 
         const { data, error } = await supabase
             .from("citas")
-            .insert([{ 
-                id_cliente, 
-                id_servicio, 
-                fecha, 
-                hora, 
-                mensaje: mensaje || "",
-                estado: "activa", 
-                creado_en: new Date() 
-            }])
+            .insert([{ id_cliente, id_servicio, fecha, hora, estado: "activa", creado_en: new Date() }])
             .select();
 
         if (error) throw error;
@@ -115,8 +48,6 @@ router.post("/", autenticar, async (req, res) => {
         res.status(500).send("Error al crear cita");
     }
 });
-
-// ... (mantener el resto de tus endpoints existentes)
 
 // Listar todas las citas
 router.get("/", autenticar, async (req, res) => {
