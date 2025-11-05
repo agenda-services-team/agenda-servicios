@@ -1,252 +1,68 @@
 import { createRouter, createWebHistory } from 'vue-router';
+import Home from '../views/Home.vue'; // Asegúrate de que este componente esté definido
+import Login from '../components/Login.vue';
+import Registro from '../components/Registro.vue';
+import Dashboard from '../layouts/Dashboard.vue';
+import Servicios from '../views/Servicios.vue';
+import Inicio from '../views/Inicio.vue';
+import Agenda from '../views/Agenda.vue';
+import RegistrarEmprendimiento from '../components/RegisterEmpre.vue'; // Importar el nuevo componente
 import { useAuthStore } from '../store';
-
-// Lazy loading para mejor performance
-const Home = () => import('../views/Home.vue');
-const Login = () => import('../components/Login.vue');
-const Registro = () => import('../components/Registro.vue');
-const Servicios = () => import('../views/Servicios.vue');
-const DetalleServicio = () => import('../views/DetalleServicio.vue');
-const Dashboard = () => import('../layouts/Dashboard.vue');
-const ClientLayout = () => import('../layouts/ClientLayout.vue');
-
-// Dashboard components
-const Inicio = () => import('../views/Inicio.vue');
-const FormEmprendimiento = () => import('../views/FormEmprendimiento.vue');
-const FormServicio = () => import('../views/FormServicio.vue');
-const Agenda = () => import('../views/Agenda.vue');
-const Galeria = () => import('../views/Galeria.vue');
-const Configuracion = () => import('../views/Configuracion.vue');
-const PerfilUsuario = () => import('../views/PerfilUsuario.vue');
-const RegisterEmpre = () => import('../components/RegisterEmpre.vue');
-
-// Client components
-const MisCitas = () => import('../views/MisCitas.vue');
-
-// Meta fields constants
-const ROUTE_META = {
-  PUBLIC: { requiresAuth: false, public: true },
-  GUEST_ONLY: { requiresAuth: false, guestOnly: true },
-  AUTH_REQUIRED: { requiresAuth: true },
-  PROVEEDOR_ONLY: { requiresAuth: true, requiresProveedor: true },
-  CLIENTE_ONLY: { requiresAuth: true, requiresCliente: true }
-};
+import axios from 'axios';
 
 const routes = [
-  // ==================== RUTAS PÚBLICAS ====================
-  {
-    path: '/',
-    name: 'Home',
-    component: Home,
-    meta: ROUTE_META.PUBLIC
-  },
-  {
-    path: '/login',
-    name: 'Login',
-    component: Login,
-    meta: ROUTE_META.GUEST_ONLY
-  },
-  {
-    path: '/registro',
-    name: 'Registro',
-    component: Registro,
-    meta: ROUTE_META.GUEST_ONLY
-  },
-  {
-    path: '/servicios',
-    name: 'Servicios',
-    component: Servicios,
-    meta: ROUTE_META.PUBLIC
-  },
-  {
-    path: '/servicio/:id',
-    name: 'DetalleServicio',
-    component: DetalleServicio,
-    meta: ROUTE_META.PUBLIC,
-    props: true // Pasa los params como props
-  },
-
-  // ==================== RUTAS DEL PROVEEDOR ====================
-  {
-    path: '/dashboard',
-    component: Dashboard,
-    meta: ROUTE_META.PROVEEDOR_ONLY,
-    redirect: { name: 'DashboardInicio' },
-    children: [
-      {
-        path: '',
-        name: 'DashboardInicio',
-        component: Inicio,
-        meta: { title: 'Inicio' }
-      },
-      {
-        path: 'emprendimiento',
-        name: 'RegisterEmprendimiento',
-        component: RegisterEmpre,
-        meta: { title: 'Registrar Emprendimiento' }
-      },
-      {
-        path: 'emprendimiento/editar',
-        name: 'FormEmprendimiento',
-        component: FormEmprendimiento,
-        meta: { title: 'Editar Emprendimiento' }
-      },
-      {
-        path: 'servicio',
-        name: 'FormServicio',
-        component: () => import('../views/FormServicio.vue'),
-        meta: { title: 'Gestionar Servicios' }
-      },
-      // Alias para servicios (ambas rutas funcionan)
-      {
-        path: 'servicios',
-        redirect: '/dashboard/servicio'
-      },
-      {
-        path: 'agenda',
-        name: 'Agenda',
-        component: Agenda,
-        meta: { title: 'Agenda' }
-      },
-      {
-        path: 'galeria',
-        name: 'Galeria',
-        component: Galeria,
-        meta: { title: 'Galería' }
-      },
-      {
-        path: 'configuracion',
-        name: 'Configuracion',
-        component: Configuracion,
-        meta: { title: 'Configuración' }
-      },
-      {
-        path: 'perfil',
-        name: 'PerfilUsuario',
-        component: PerfilUsuario,
-        meta: { title: 'Perfil' }
-      }
-    ]
-  },
-
-  // ==================== RUTAS DEL CLIENTE ====================
-  {
-    path: '/cliente',
-    component: ClientLayout,
-    meta: ROUTE_META.CLIENTE_ONLY,
-    redirect: { name: 'MisCitas' },
-    children: [
-      {
-        path: 'mis-citas',
-        name: 'MisCitas',
-        component: MisCitas,
-        meta: { title: 'Mis Citas' }
-      },
-      {
-        path: 'perfil',
-        name: 'PerfilCliente',
-        component: PerfilUsuario,
-        meta: { title: 'Perfil' }
-      }
-    ]
-  },
-
-  // ==================== RUTA 404 ====================
-  {
-    path: '/:pathMatch(.*)*',
-    name: 'NotFound',
-    redirect: '/'
-  }
+    { path: '/', component: Home },
+    { path: '/login', component: Login },
+    { path: '/registro', component: Registro },
+    {
+        path: '/dashboard',
+        component: Dashboard,
+        children: [
+            { path: '', component: Inicio },
+            { path: 'agenda', component: Agenda },
+            { path: 'emprendimiento', component: RegistrarEmprendimiento }, // Nueva ruta
+            { path: 'servicios', component: Servicios }, // Movido dentro del dashboard
+        ],
+    },
 ];
 
 const router = createRouter({
-  history: createWebHistory(),
-  routes,
-  // Mejorar experiencia de navegación
-  scrollBehavior(to, from, savedPosition) {
-    if (savedPosition) {
-      return savedPosition;
-    } else {
-      return { top: 0, behavior: 'smooth' };
-    }
-  }
+    history: createWebHistory(),
+    routes,
+    linkActiveClass: 'router-link-active',
+    linkExactActiveClass: 'router-link-exact-active',
 });
 
-// ==================== GUARD DE NAVEGACIÓN MEJORADO ====================
+// Guardia de navegación
 router.beforeEach(async (to, from, next) => {
-  const authStore = useAuthStore();
-  
-  // Inicializar autenticación si hay token
-  if (!authStore.isInitialized && localStorage.getItem('token')) {
-    await authStore.initializeAuth();
-  }
+    const store = useAuthStore();
+    const isAuthenticated = store.isAuthenticated;
 
-  const isAuthenticated = authStore.isAuthenticated;
-  const userType = authStore.user?.tipo_usuario;
-
-  console.log('🛡️ Navegación:', {
-    to: to.path,
-    authenticated: isAuthenticated,
-    userType: userType,
-    meta: to.meta
-  });
-
-  // ========== RUTAS PÚBLICAS ==========
-  if (to.meta.public) {
-    return next();
-  }
-
-  // ========== RUTAS SOLO PARA INVITADOS ==========
-  if (to.meta.guestOnly) {
-    if (isAuthenticated) {
-      // Redirigir según el tipo de usuario
-      const redirectPath = userType === 'proveedor' ? '/dashboard' : '/cliente/mis-citas';
-      console.log(`✅ Usuario autenticado, redirigiendo a: ${redirectPath}`);
-      return next(redirectPath);
-    }
-    return next();
-  }
-
-  // ========== RUTAS QUE REQUIEREN AUTENTICACIÓN ==========
-  if (to.meta.requiresAuth) {
-    if (!isAuthenticated) {
-      console.log('⚠️ No autenticado, redirigiendo a login');
-      return next({
-        name: 'Login',
-        query: { redirect: to.fullPath }
-      });
+    // Verificar si el usuario está autenticado para rutas de dashboard
+    if (to.path.startsWith('/dashboard') && !isAuthenticated) {
+        next('/login');
+        return;
     }
 
-    // ========== VERIFICACIÓN DE ROLES ==========
-    
-    // Ruta para proveedores pero usuario es cliente
-    if (to.meta.requiresProveedor && userType !== 'proveedor') {
-      console.log('🚫 Acceso denegado: se requiere ser proveedor');
-      return next('/cliente/mis-citas');
+    // Verificar si el usuario tiene un emprendimiento registrado
+    if (to.path.startsWith('/dashboard') && to.path !== '/dashboard/emprendimiento' && isAuthenticated) {
+        try {
+            const id_usuario = localStorage.getItem('id_usuario'); // Obtener id_usuario
+            const response = await axios.get(`http://localhost:4000/api/emprendimientos/usuario/${id_usuario}`);
+            const tieneEmprendimiento = response.data.tieneEmprendimiento; // Suponiendo que el backend devuelve esto
+
+            if (!tieneEmprendimiento) {
+                next('/dashboard/emprendimiento'); // Redirigir a registrar emprendimiento
+                return;
+            }
+        } catch (error) {
+            console.error('Error al verificar emprendimiento:', error);
+            next('/dashboard/emprendimiento'); // En caso de error, redirigir a registrar emprendimiento
+            return;
+        }
     }
 
-    // Ruta para clientes pero usuario es proveedor
-    if (to.meta.requiresCliente && userType !== 'cliente') {
-      console.log('🚫 Acceso denegado: se requiere ser cliente');
-      return next('/dashboard');
-    }
-
-    console.log('✅ Acceso permitido');
-    return next();
-  }
-
-  
-  next();
-});
-
-// Opcional: Guard afterEach para analytics o cambios de título
-router.afterEach((to) => {
-  // Cambiar título de la página
-  const title = to.meta.title || 'Oaxaca Glow';
-  document.title = `${title} - Oaxaca Glow`;
-  
-  // Analytics tracking
-  console.log('📍 Navegación completada:', to.path);
+    next();
 });
 
 export default router;
