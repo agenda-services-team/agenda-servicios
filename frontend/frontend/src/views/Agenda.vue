@@ -171,7 +171,6 @@ export default {
 </script>
 
 <style scoped>
-/* Colores de tu paleta: Morado Fuerte: #791236, Lila Claro: #F5EEFA */
 .agenda-container {
     padding: 10px 0;
 }

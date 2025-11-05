@@ -2,7 +2,7 @@
     <aside class="sidebar">
         <div class="user-info">
             <img src="../assets/logo.png" alt="Logo" class="logo" />
-            <p>Hola, nameService</p>
+            <p>Hola nameService</p>
         </div>
         <nav class="menu">
             <router-link to="/dashboard" class="menu-item" exact-active-class="router-link-active">
@@ -14,8 +14,7 @@
             <router-link to="/dashboard/servicios" class="menu-item">
                 <i class="icon">💇</i> Servicios
             </router-link>
-            <!-- Comentado hasta que se definan las rutas -->
-            <router-link to="/galeria" class="menu-item">
+            <router-link to="/dashboard/galeria" class="menu-item">
                 <i class="icon">🖼️</i> Galería
             </router-link>
             <router-link to="/configuracion" class="menu-item">
@@ -24,7 +23,7 @@
         </nav>
     </aside>
 </template>
-<script>
+<script setup>
 </script>
 
 <style scoped>

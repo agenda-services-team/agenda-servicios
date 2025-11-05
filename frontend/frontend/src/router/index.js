@@ -1,12 +1,13 @@
 import { createRouter, createWebHistory } from 'vue-router';
-import Home from '../views/Home.vue'; // Asegúrate de que este componente esté definido
+import Home from '../views/Home.vue';
 import Login from '../components/Login.vue';
 import Registro from '../components/Registro.vue';
 import Dashboard from '../layouts/Dashboard.vue';
 import Servicios from '../views/Servicios.vue';
 import Inicio from '../views/Inicio.vue';
 import Agenda from '../views/Agenda.vue';
-import RegistrarEmprendimiento from '../components/RegisterEmpre.vue'; // Importar el nuevo componente
+import RegistrarEmprendimiento from '../components/RegisterEmpre.vue';
+import Galeria from '../views/Galeria.vue';
 import { useAuthStore } from '../store';
 import axios from 'axios';
 
@@ -20,8 +21,9 @@ const routes = [
         children: [
             { path: '', component: Inicio },
             { path: 'agenda', component: Agenda },
-            { path: 'emprendimiento', component: RegistrarEmprendimiento }, // Nueva ruta
-            { path: 'servicios', component: Servicios }, // Movido dentro del dashboard
+            { path: 'emprendimiento', component: RegistrarEmprendimiento }, // para registrar emprendimiento
+            { path: 'servicios', component: Servicios }, // para mostrar los servicios
+            { path: 'galeria', component: Galeria }//una galeria de imagenes de los trabajos del proveedor
         ],
     },
 ];
@@ -49,7 +51,7 @@ router.beforeEach(async (to, from, next) => {
         try {
             const id_usuario = localStorage.getItem('id_usuario'); // Obtener id_usuario
             const response = await axios.get(`http://localhost:4000/api/emprendimientos/usuario/${id_usuario}`);
-            const tieneEmprendimiento = response.data.tieneEmprendimiento; // Suponiendo que el backend devuelve esto
+            const tieneEmprendimiento = response.data.tieneEmprendimiento; // el backend devuelve esto
 
             if (!tieneEmprendimiento) {
                 next('/dashboard/emprendimiento'); // Redirigir a registrar emprendimiento

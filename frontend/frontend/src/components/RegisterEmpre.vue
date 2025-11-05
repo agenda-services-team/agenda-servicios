@@ -93,6 +93,9 @@ async function crearEmprendimiento() {
             headers: { 'Content-Type': 'multipart/form-data' }
         });
 
+        // Guardar el nombre del negocio en localStorage
+        localStorage.setItem('nombre_negocio', nombre.value);
+
         alert('Emprendimiento creado con éxito!');
         router.push('/dashboard');
     } catch (error) {

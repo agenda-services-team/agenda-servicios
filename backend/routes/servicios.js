@@ -26,6 +26,7 @@ const router = express.Router();
 
 router.post("/", autenticar, upload.single("imagen"), async (req, res) => {
     try {
+        console.log("Datos del usuario en req.usuario:", req.usuario);
         const { nombre_servicio, descripcion, precio, duracion } = req.body;
         const id_emprendimiento = req.usuario.id_emprendimiento;
         let imagen_referencia = null;
@@ -86,20 +87,43 @@ router.post("/", autenticar, upload.single("imagen"), async (req, res) => {
 router.get("/", autenticar, async (req, res) => {
     try {
 
+        let id_emprendimiento = req.usuario?.id_emprendimiento;
+
+        // Si el token no tiene el  id_emprendimiento, intento obtenerlo a partir del id_usuario
+        if (!id_emprendimiento) {
+            const id_usuario = req.usuario?.id_usuario;
+            if (id_usuario) {
+                const { data: empData, error: empError } = await supabase
+                    .from('emprendimientos')
+                    .select('id_emprendimiento')
+                    .eq('id_proveedor', id_usuario)
+                    .single();
+
+                if (!empError && empData) {
+                    id_emprendimiento = empData.id_emprendimiento;
+                }
+            }
+        }
+
+        // Si el usuario no tiene un emprendimiento asociado, se devuelve una lista vacia
+        if (!id_emprendimiento) {
+            return res.json([]);
+        }
+
         const { data, error } = await supabase
             .from("servicios")
             .select(`
                 *,
                 emprendimientos (
-                id_emprendimiento,
-                nombre_negocio,
-                usuarios (
-                    id_usuario,
-                    nombre
+                    id_emprendimiento,
+                    nombre_negocio,
+                    usuarios (
+                        id_usuario,
+                        nombre
+                    )
                 )
-            )
-        `)
-            .eq('id_emprendimiento', req.usuario.id_emprendimiento)
+            `)
+            .eq('id_emprendimiento', id_emprendimiento)
             .order("id_servicio", { ascending: true });
 
         if (error) throw error;

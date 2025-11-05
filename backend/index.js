@@ -4,6 +4,7 @@ import usuariosRouter from "./routes/usuarios.js";
 import serviciosRouter from "./routes/servicios.js";
 import citasRouter from "./routes/citas.js";
 import authRouter from "./routes/auth.js";
+import galeriaRouter from "./routes/galeria.js";
 
 
 const app = express();
@@ -19,5 +20,6 @@ app.use("/api/servicios", serviciosRouter);
 app.use("/api/citas", citasRouter);
 app.use("/api/auth", authRouter);
 app.use("/api/emprendimientos", (await import("./routes/emprendimientos.js")).default);
+app.use("/api/galeria", galeriaRouter);
 
 app.listen(PORT, () => console.log(`Servidor corriendo en http://localhost:${PORT}`));

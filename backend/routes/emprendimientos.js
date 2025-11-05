@@ -16,12 +16,23 @@ router.get('/usuario/:id_usuario', async (req, res) => {
 
         const { data, error } = await supabase
             .from('emprendimientos')
-            .select('*')
+            .select('id_emprendimiento, nombre_negocio, descripcion, logo')
             .eq('id_proveedor', id_usuario);
 
         if (error) throw error;
 
-        res.json({ tieneEmprendimiento: data.length > 0 });
+        if (data.length > 0) {
+            //Devuelve información del emprendimiento si existe
+            res.json({
+                tieneEmprendimiento: true,
+                nombre_negocio: data[0].nombre_negocio,
+                logo: data[0].logo,
+                descripcion: data[0].descripcion,
+            });
+        } else {
+            //Si no tiene emprendimiento registrado
+            res.json({ tieneEmprendimiento: false });
+        }
     } catch (error) {
         console.error('Error al verificar emprendimiento:', error.message);
         res.status(500).send('Error al verificar emprendimiento');
