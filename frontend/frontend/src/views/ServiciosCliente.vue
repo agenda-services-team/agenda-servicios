@@ -90,7 +90,7 @@ export default {
 
 .hero-fullscreen {
     flex: 1;
-    background-image: url('/src/images/mujer13.jpg');
+    background-image: url('/src/images/img2.jpg');
     background-size: cover;
     background-position: center;
     background-repeat: no-repeat;
