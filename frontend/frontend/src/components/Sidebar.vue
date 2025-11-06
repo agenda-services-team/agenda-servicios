@@ -17,7 +17,7 @@
             <router-link to="/dashboard/galeria" class="menu-item">
                 <i class="icon">🖼️</i> Galería
             </router-link>
-            <router-link to="/configuracion" class="menu-item">
+            <router-link to="/dashboard/configuracion" class="menu-item">
                 <i class="icon">⚙️</i> Configuración
             </router-link>
         </nav>
