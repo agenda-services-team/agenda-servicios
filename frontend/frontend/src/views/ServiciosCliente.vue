@@ -82,7 +82,7 @@ export default {
 .servicios-page {
     height: 100vh;
     width: 100vw;
-    /* que es width: es el ancho total de la ventana */
+    /* el width es el ancho total de la ventana */
     overflow: hidden;
     display: flex;
     flex-direction: column;
