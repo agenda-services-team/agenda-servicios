@@ -1,16 +1,16 @@
 <template>
   <div id="app">
-    <!-- Renderiza directamente el router-view para rutas de dashboard -->
     <router-view v-if="$route.path.startsWith('/dashboard')" />
 
-    <!-- Para otras rutas, muestra Navbar, contenido y Footer -->
     <template v-else>
-      <Navbar v-if="$route.path !== '/login' && $route.path !== '/registro'" />
-      <main
-        :class="{ 'main-content': !$route.path.startsWith('/dashboard'), 'no-padding': $route.path === '/login' || $route.path === '/registro' }">
+      <!-- ✅ Solo muestra Navbar en Home -->
+      <Navbar v-if="$route.path === '/'" />
+      
+      <main :class="mainClasses">
         <router-view />
       </main>
-      <Footer v-if="$route.path !== '/login' && $route.path !== '/registro'" />
+      
+      <Footer v-if="!hideFooter" />
     </template>
   </div>
 </template>
@@ -19,7 +19,7 @@
 import Navbar from './components/Navbar.vue';
 import Footer from './components/Footer.vue';
 import { computed } from 'vue';
-import { useRoute } from 'vue-router'; // Importar useRoute
+import { useRoute } from 'vue-router';
 import { useAuthStore } from './store';
 
 export default {
@@ -28,30 +28,17 @@ export default {
   setup() {
     const store = useAuthStore();
     const route = useRoute();
-    const isAuth = computed(() => store.isAuthenticated);
-    const logout = () => {
-      store.logout();
-    };
-    return { isAuth, route };
+    
+    const mainClasses = computed(() => ({
+      'main-content': !route.path.startsWith('/dashboard'),
+      'no-padding': route.path === '/login' || route.path === '/registro'
+    }));
+    
+    const hideFooter = computed(() => {
+      return route.path === '/login' || route.path === '/registro';
+    });
+    
+    return { route, mainClasses, hideFooter };
   }
 }
 </script>
-
-<style>
-#app {
-  font-family: Arial, sans-serif;
-  display: flex;
-  flex-direction: column;
-  min-height: 100vh;
-}
-
-.main-content {
-  flex: 1;
-  padding-top: 80px;
-  margin: 0 auto;
-}
-
-.no-padding {
-  padding-top: 0;
-}
-</style>
