@@ -8,6 +8,7 @@ import Inicio from '../views/Inicio.vue';
 import Agenda from '../views/Agenda.vue';
 import RegistrarEmprendimiento from '../components/RegisterEmpre.vue';
 import Galeria from '../views/Galeria.vue';
+import Configuracion from '../views/Configuracion.vue';
 import { useAuthStore } from '../store';
 import axios from 'axios';
 
@@ -23,7 +24,8 @@ const routes = [
             { path: 'agenda', component: Agenda },
             { path: 'emprendimiento', component: RegistrarEmprendimiento }, // para registrar emprendimiento
             { path: 'servicios', component: Servicios }, // para mostrar los servicios
-            { path: 'galeria', component: Galeria }//una galeria de imagenes de los trabajos del proveedor
+            { path: 'galeria', component: Galeria },//una galeria de imagenes de los trabajos del proveedor
+            { path: 'configuracion', component: Configuracion } //Para que el usuario pueda configurar su cuenta
         ],
     },
 ];
