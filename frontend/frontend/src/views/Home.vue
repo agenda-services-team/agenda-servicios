@@ -1,103 +1,122 @@
-<template>
-    <div>
-        <main class="main-content">
-            <h2 class="titulo-bienvenida">Bienvenido a OaxacaGlow</h2>
-            <p class="descripcion-home">
-                El sitio perfecto donde puedes explorar los diversos<br>
-                servicios estéticos que Oaxaca tiene para ofrecer.<br>
-                ¡Embellece tu vida con nosotros!
-            </p>
-            <div class="opciones-container">
-                <div class="opcion">
-                    <div class="img-container">
-                        <img src="/src/images/imagenProv.png" alt="Opción 1" class="img-opcion" />
-                        <router-link to="/ruta1">
-                            <button class="btn-opcion">Puedes unirte como proveedor y ofrecer tus servicios</button>
-                        </router-link>
+<template>  
+    <div class="home-page">
+        <!-- Imagen fullscreen -->
+        <section class="hero-fullscreen"></section>
+
+        <!-- Contenido con scroll -->
+        <section class="content-section">
+            <div class="content-wrapper">
+                <h2 class="titulo-bienvenida">Bienvenido a OaxacaGlow</h2>
+                <p class="descripcion-home">
+                    El sitio perfecto donde puedes explorar los diversos<br>
+                    servicios estéticos que Oaxaca tiene para ofrecer.<br>
+                    ¡Embellece tu vida con nosotros!
+                </p>
+                
+                <div class="opciones-container">
+                    <div class="opcion">
+                        <div class="img-container">
+                            <img src="/src/images/imagenProv.png" alt="Proveedor" class="img-opcion" />
+                            <router-link to="/registro">
+                                <button class="btn-opcion">
+                                    Puedes unirte como proveedor y ofrecer tus servicios
+                                </button>
+                            </router-link>
+                        </div>
                     </div>
-                </div>
-                <div class="opcion">
-                    <div class="img-container">
-                        <img src="/src/images/imagenCli.jpg" alt="Opción 2" class="img-opcion" />
-                        <router-link to="/ruta2">
-                            <button class="btn-opcion">Unete para explorar y agenda citas en cuestion de minutos para
-                                servicios esteticos</button>
-                        </router-link>
+                    
+                    <div class="opcion">
+                        <div class="img-container">
+                            <img src="/src/images/imagenCli.jpg" alt="Cliente" class="img-opcion" />
+                            <router-link to="/registro">
+                                <button class="btn-opcion">
+                                    Únete para explorar y agenda citas en cuestión de minutos
+                                </button>
+                            </router-link>
+                        </div>
                     </div>
                 </div>
             </div>
-        </main>
-
+        </section>
     </div>
 </template>
 
 <script>
-import Navbar from "../components/Navbar.vue";
-import Footer from "../components/Footer.vue";
-
 export default {
-    name: "Home",
-    components: { Navbar, Footer }
+    name: "Home"
 }
 </script>
 
 <style scoped>
-.main-content {
-    padding: 0;
-    text-align: center;
-    background-image: url("/src/images/fondoInicio.png");
+
+:root {
+    --lavanda-clara: #F3EDFF;
+    --lila-pastel: #CBA6F7;
+    --morado-suave: #8B5FBF;
+    --gris-humo: #4E4E4E;
+    --blanco: #FFFFFF;
+}
+
+/* Contenedor principal */
+.home-page {
+    width: 100%;
+}
+
+/* Hero fullscreen - CORREGIDO */
+.hero-fullscreen {
+    width: 100%;
+    height: 100vh; 
+    background-image: url("/src/images/img3.jpg"); /* ✅ Ruta corregida */
     background-size: cover;
     background-position: center;
-    min-height: 100vh;
-    width: 80vw;
-    display: flex;
-    flex-direction: column;
-    justify-content: flex-start;
-    align-items: center;
-    position: relative;
-    overflow: hidden;
-    padding-top: 60px;
+    background-repeat: no-repeat;
 }
 
-.main-content::before {
-    content: "";
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: rgba(255, 255, 255, 0.6);
-    /*un blanco semitranparente*/
-    z-index: 1;
+/* Sección de contenido */
+.content-section {
+    padding: 80px 20px;
+    background: #fff;
+    text-align: center;
 }
 
-.main-content>* {
-    position: relative;
-    z-index: 2;
+.content-wrapper {
+    max-width: 1200px;
+    margin: 0 auto;
 }
 
+/* Textos */
+.titulo-bienvenida {
+    font-size: 3rem;
+    font-weight: bold;
+    margin-bottom: 30px;
+    color: #333;
+}
+
+.descripcion-home {
+    font-size: 1.3rem;
+    line-height: 2.2rem;
+    color: #555;
+    margin-bottom: 60px;
+}
+
+/* Opciones */
 .opciones-container {
     display: flex;
     justify-content: center;
     gap: 60px;
-    margin-top: 40px;
+    flex-wrap: wrap;
 }
 
 .opcion {
     display: flex;
     flex-direction: column;
     align-items: center;
-    min-width: 460px;
-    min-height: 300px;
 }
 
 .img-container {
     position: relative;
     width: 460px;
     height: 300px;
-    display: flex;
-    justify-content: center;
-    align-items: center;
 }
 
 .img-opcion {
@@ -113,38 +132,67 @@ export default {
     bottom: 18px;
     left: 50%;
     transform: translateX(-50%);
-    padding: 14px 0;
-    width: 200px;
-    font-size: 1.15rem;
+    padding: 14px 20px;
+    max-width: 280px;
+    font-size: 1.05rem;
     border: none;
     border-radius: 8px;
-    background: rgba(255, 247, 247, 0.8);
+    background: rgba(255, 247, 247, 0.95);
     color: #111;
     cursor: pointer;
-    transition: background 0.2s, box-shadow 0.2s;
     font-weight: 600;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-    letter-spacing: 1px;
-    margin: 0;
-    display: block;
-    z-index: 2;
+    transition: all 0.3s ease;
+    line-height: 1.4;
 }
 
 .btn-opcion:hover {
-    background: rgba(243, 214, 224, 0.9);
-    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.13);
-    color: #111;
+    background: rgba(243, 214, 224, 0.98);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+    transform: translateX(-50%) translateY(-2px);
 }
 
-.titulo-bienvenida {
-    font-size: 3rem;
-    font-weight: bold;
-    margin-bottom: 30px;
+/* Responsive */
+@media (max-width: 768px) {
+    .hero-fullscreen {
+        height: 70vh;
+    }
+    
+    .titulo-bienvenida {
+        font-size: 2rem;
+    }
+    
+    .descripcion-home {
+        font-size: 1.1rem;
+        line-height: 1.8rem;
+    }
+    
+    .opciones-container {
+        flex-direction: column;
+        gap: 30px;
+    }
+    
+    .img-container {
+        width: 100%;
+        max-width: 400px;
+    }
+    
+    .btn-opcion {
+        font-size: 0.95rem;
+    }
 }
 
-.descripcion-home {
-    font-size: 1.3rem;
-    line-height: 2.2rem;
-    max-width: 600px;
+@media (max-width: 480px) {
+    .content-section {
+        padding: 40px 15px;
+    }
+    
+    .titulo-bienvenida {
+        font-size: 1.8rem;
+    }
+    
+    .img-container {
+        height: 250px;
+    }
 }
 </style>
