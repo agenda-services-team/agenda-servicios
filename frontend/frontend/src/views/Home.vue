@@ -48,6 +48,15 @@ export default {
 </script>
 
 <style scoped>
+
+:root {
+    --lavanda-clara: #F3EDFF;
+    --lila-pastel: #CBA6F7;
+    --morado-suave: #8B5FBF;
+    --gris-humo: #4E4E4E;
+    --blanco: #FFFFFF;
+}
+
 /* Contenedor principal */
 .home-page {
     width: 100%;
