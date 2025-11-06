@@ -15,6 +15,7 @@ const routes = [
     { path: '/', component: Home },
     { path: '/login', component: Login },
     { path: '/registro', component: Registro },
+    { path: '/servicios', component: Servicios} ,
     {
         path: '/dashboard',
         component: Dashboard,
@@ -22,7 +23,6 @@ const routes = [
             { path: '', component: Inicio },
             { path: 'agenda', component: Agenda },
             { path: 'emprendimiento', component: RegistrarEmprendimiento }, // para registrar emprendimiento
-            { path: 'servicios', component: Servicios }, // para mostrar los servicios
             { path: 'galeria', component: Galeria }//una galeria de imagenes de los trabajos del proveedor
         ],
     },
