@@ -3,7 +3,7 @@
         <!-- imagen del logo -->
         <div class="navbar-left">
             <img src="/src/assets/logo.png" alt="Logo" class="logo" />
-            <h1 class="brand-name">OaxacaGlow</h1>
+            <h1 class="brand-name">OaxacaGlow </h1>
         </div>
 
         <!-- botones para iniicar sesion o unirte-->
