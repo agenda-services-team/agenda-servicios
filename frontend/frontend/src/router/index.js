@@ -11,19 +11,75 @@ import Galeria from '../views/Galeria.vue';
 import { useAuthStore } from '../store';
 import axios from 'axios';
 
+// Importaciones de vistas de cliente
+import CitasCliente from '../views/CitasCliente.vue'; // ✅ CORREGIDO
+import PerfilCliente from '../views/PerfilCliente.vue';
+
 const routes = [
-    { path: '/', component: Home },
-    { path: '/login', component: Login },
-    { path: '/registro', component: Registro },
-    { path: '/servicios', component: Servicios} ,
+    // Rutas públicas
+    { 
+        path: '/', 
+        name: 'Home',
+        component: Home 
+    },
+    { 
+        path: '/login', 
+        name: 'Login',
+        component: Login 
+    },
+    { 
+        path: '/registro', 
+        name: 'Registro',
+        component: Registro 
+    },
+    
+    // Rutas de cliente (requieren autenticación)
+    { 
+        path: '/servicios', 
+        name: 'Servicios',
+        component: Servicios,
+        meta: { requiresAuth: true, requiresCliente: true } // ✅ AGREGADO
+    },
+    { 
+        path: '/cliente/mis-citas', // ✅ CAMBIADO para consistencia
+        name: 'CitasCliente',
+        component: CitasCliente,
+        meta: { requiresAuth: true, requiresCliente: true } // ✅ AGREGADO
+    },
+    { 
+        path: '/cliente/perfil', 
+        name: 'PerfilCliente',
+        component: PerfilCliente,
+        meta: { requiresAuth: true, requiresCliente: true } // ✅ AGREGADO
+    },
+    
+    // Rutas de proveedor (Dashboard)
     {
         path: '/dashboard',
+        name: 'Dashboard',
         component: Dashboard,
+        meta: { requiresAuth: true, requiresProveedor: true }, // ✅ AGREGADO
         children: [
-            { path: '', component: Inicio },
-            { path: 'agenda', component: Agenda },
-            { path: 'emprendimiento', component: RegistrarEmprendimiento }, // para registrar emprendimiento
-            { path: 'galeria', component: Galeria }//una galeria de imagenes de los trabajos del proveedor
+            { 
+                path: '', 
+                name: 'DashboardInicio',
+                component: Inicio 
+            },
+            { 
+                path: 'agenda', 
+                name: 'Agenda',
+                component: Agenda 
+            },
+            { 
+                path: 'emprendimiento', 
+                name: 'Emprendimiento',
+                component: RegistrarEmprendimiento 
+            },
+            { 
+                path: 'galeria', 
+                name: 'Galeria',
+                component: Galeria 
+            }
         ],
     },
 ];
@@ -35,31 +91,44 @@ const router = createRouter({
     linkExactActiveClass: 'router-link-exact-active',
 });
 
-// Guardia de navegación
+// ✅ GUARD MEJORADO
 router.beforeEach(async (to, from, next) => {
     const store = useAuthStore();
     const isAuthenticated = store.isAuthenticated;
+    const tipoUsuario = store.user?.tipo_usuario;
 
-    // Verificar si el usuario está autenticado para rutas de dashboard
-    if (to.path.startsWith('/dashboard') && !isAuthenticated) {
+    // 1. Verificar autenticación para rutas protegidas
+    if (to.meta.requiresAuth && !isAuthenticated) {
         next('/login');
         return;
     }
 
-    // Verificar si el usuario tiene un emprendimiento registrado
-    if (to.path.startsWith('/dashboard') && to.path !== '/dashboard/emprendimiento' && isAuthenticated) {
+    // 2. Verificar que clientes no accedan a dashboard
+    if (to.meta.requiresProveedor && tipoUsuario === 'cliente') {
+        next('/servicios');
+        return;
+    }
+
+    // 3. Verificar que proveedores no accedan a rutas de cliente
+    if (to.meta.requiresCliente && tipoUsuario === 'proveedor') {
+        next('/dashboard');
+        return;
+    }
+
+    // 4. Verificar emprendimiento solo para proveedores en dashboard
+    if (to.path.startsWith('/dashboard') && to.path !== '/dashboard/emprendimiento' && isAuthenticated && tipoUsuario === 'proveedor') {
         try {
-            const id_usuario = localStorage.getItem('id_usuario'); // Obtener id_usuario
+            const id_usuario = localStorage.getItem('id_usuario');
             const response = await axios.get(`http://localhost:4000/api/emprendimientos/usuario/${id_usuario}`);
-            const tieneEmprendimiento = response.data.tieneEmprendimiento; // el backend devuelve esto
+            const tieneEmprendimiento = response.data.tieneEmprendimiento;
 
             if (!tieneEmprendimiento) {
-                next('/dashboard/emprendimiento'); // Redirigir a registrar emprendimiento
+                next('/dashboard/emprendimiento');
                 return;
             }
         } catch (error) {
             console.error('Error al verificar emprendimiento:', error);
-            next('/dashboard/emprendimiento'); // En caso de error, redirigir a registrar emprendimiento
+            next('/dashboard/emprendimiento');
             return;
         }
     }
