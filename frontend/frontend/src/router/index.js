@@ -14,7 +14,7 @@ import { useAuthStore } from '../store';
 import axios from 'axios';
 
 // Importaciones de vistas de cliente
-import CitasCliente from '../views/CitasCliente.vue'; // ✅ CORREGIDO
+import CitasCliente from '../views/CitasCliente.vue';
 import PerfilCliente from '../views/PerfilCliente.vue';
 
 const routes = [
@@ -40,19 +40,19 @@ const routes = [
         path: '/servicios',
         name: 'Servicios',
         component: ServiciosCliente,
-        meta: { requiresAuth: true, requiresCliente: true } // ✅ AGREGADO
+        meta: { requiresAuth: true, requiresCliente: true }
     },
     {
-        path: '/cliente/mis-citas', // ✅ CAMBIADO para consistencia
+        path: '/cliente/mis-citas', // 
         name: 'CitasCliente',
         component: CitasCliente,
-        meta: { requiresAuth: true, requiresCliente: true } // ✅ AGREGADO
+        meta: { requiresAuth: true, requiresCliente: true }
     },
     {
         path: '/cliente/perfil',
         name: 'PerfilCliente',
         component: PerfilCliente,
-        meta: { requiresAuth: true, requiresCliente: true } // ✅ AGREGADO
+        meta: { requiresAuth: true, requiresCliente: true }
     },
 
     // Rutas de proveedor (Dashboard)
@@ -60,7 +60,7 @@ const routes = [
         path: '/dashboard',
         name: 'Dashboard',
         component: Dashboard,
-        meta: { requiresAuth: true, requiresProveedor: true }, // ✅ AGREGADO
+        meta: { requiresAuth: true, requiresProveedor: true },
         children: [
             { path: '', component: Inicio },
             { path: 'agenda', component: Agenda },
@@ -79,7 +79,6 @@ const router = createRouter({
     linkExactActiveClass: 'router-link-exact-active',
 });
 
-// ✅ GUARD MEJORADO
 router.beforeEach(async (to, from, next) => {
     const store = useAuthStore();
     const isAuthenticated = store.isAuthenticated;

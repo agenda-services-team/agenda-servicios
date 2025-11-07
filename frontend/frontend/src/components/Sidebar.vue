@@ -1,9 +1,11 @@
 <template>
     <aside class="sidebar">
         <div class="user-info">
-            <img src="../assets/logo.png" alt="Logo" class="logo" />
-            <p>Hola nameService</p>
+            <img :src="logoEmprendimiento || '../assets/logo.png'" alt="Logo" class="logo" />
+            <p v-if="nombreNegocio">Hola, {{ nombreNegocio }}</p>
+            <p v-else>Hola 👋</p>
         </div>
+
         <nav class="menu">
             <router-link to="/dashboard" class="menu-item" exact-active-class="router-link-active">
                 <i class="icon">🏠</i> Inicio
@@ -23,7 +25,31 @@
         </nav>
     </aside>
 </template>
+
 <script setup>
+import { ref, onMounted } from 'vue'
+
+const nombreNegocio = ref('')
+const logoEmprendimiento = ref(null)
+
+// Se obtiene el id del usuario que esta logueado
+const idUsuario = localStorage.getItem('id_usuario')
+
+onMounted(async () => {
+    if (!idUsuario) return
+
+    try {
+        const response = await fetch(`http://localhost:4000/api/emprendimientos/usuario/${idUsuario}`)
+        const data = await response.json()
+        console.log('Datos del emprendimiento:', data)
+        if (data.tieneEmprendimiento) {
+            nombreNegocio.value = data.nombre_negocio
+            logoEmprendimiento.value = data.logo
+        }
+    } catch (error) {
+        console.error('Error al obtener emprendimiento:', error)
+    }
+})
 </script>
 
 <style scoped>
@@ -43,6 +69,7 @@
 
 .logo {
     max-width: 100px;
+    border-radius: 10px;
 }
 
 .menu-item {

@@ -9,7 +9,7 @@
         <!-- Contenido principal -->
         <div class="container py-4">
             <div class="row">
-                <!-- Columna izquierda: perfil básico -->
+                <!-- Columna izquierda , es un  perfil básico -->
                 <div class="col-md-4 mb-4">
                     <div class="card shadow-sm p-3 text-center">
                         <img src="https://via.placeholder.com/120" alt="Foto de perfil"
@@ -18,8 +18,14 @@
                         <p class="text-muted">{{ usuario.correo || 'correo@ejemplo.com' }}</p>
                         <hr />
                         <p><strong>Teléfono:</strong> {{ usuario.telefono || 'No registrado' }}</p>
+
                         <button class="btn btn-primary btn-sm w-100 mt-2" @click="editarPerfil">
                             Editar perfil
+                        </button>
+
+                        <!--Botón para cerrar sesión -->
+                        <button class="btn btn-outline-danger btn-sm w-100 mt-2" @click="cerrarSesion">
+                            Cerrar sesión
                         </button>
                     </div>
                 </div>
@@ -117,6 +123,9 @@
 
 <script setup>
 import { ref } from "vue";
+import { useRouter } from "vue-router";
+
+const router = useRouter();
 
 const usuario = ref({
     nombre: "",
@@ -138,12 +147,20 @@ const guardarPerfil = () => alert("Perfil actualizado");
 const guardarNegocio = () => alert("Configuración del negocio guardada");
 const guardarNotificaciones = () => alert("Preferencias de notificación guardadas");
 const editarPerfil = () => alert("Modo edición activado");
+
+//Función para cerrar sesión
+const cerrarSesion = () => {
+    localStorage.removeItem("token");
+    localStorage.removeItem("usuario");
+
+    alert("Has cerrado sesión correctamente");
+    router.push("/login"); // se  Redirige a la página de inicio de sesión
+};
 </script>
 
 <style scoped>
 .profile-cover {
     background-color: #b5a0ef;
-    /* Azul Bootstrap */
     height: 150px;
     border-radius: 10px 10px 0 0;
 }
@@ -164,6 +181,16 @@ img.rounded-circle {
 .btn-primary:hover {
     background-color: #c093cc;
     border-color: #c093cc;
+}
+
+.btn-outline-danger {
+    border-color: #e57373;
+    color: #e57373;
+}
+
+.btn-outline-danger:hover {
+    background-color: #e57373;
+    color: #fff;
 }
 
 #negocio-tab,
