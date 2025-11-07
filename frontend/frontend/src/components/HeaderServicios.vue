@@ -19,21 +19,20 @@
                 <button @click="toggleSearch" class="nav-link search-btn">
                     Buscar
                 </button>
-                <router-link to="/cliente/perfil" class="nav-link">
-                    Mi Perfil
-                </router-link>
             </nav>
             
-            <!-- Acciones a la derecha (futuro: notificaciones, avatar) -->
+            <!-- ✅ NUEVO: Nombre del usuario y perfil -->
             <div class="header-actions">
-                <!-- Icono de búsqueda móvil -->
-                <button @click="toggleSearch" class="mobile-search-btn">
-                    🔍
-                </button>
+                <div class="user-greeting">
+                    <span class="greeting-text">Hola, {{ nombreUsuario }}</span>
+                    <router-link to="/cliente/perfil" class="user-avatar">
+                        {{ primeraLetra }}
+                    </router-link>
+                </div>
             </div>
         </div>
         
-        <!-- Barra de búsqueda (aparece al hacer click en "Buscar") -->
+        <!-- Barra de búsqueda -->
         <div v-if="showSearch" class="search-bar">
             <input 
                 type="text" 
@@ -59,8 +58,19 @@ export default {
         return {
             logoUrl: new URL('../images/logo.png', import.meta.url).href,
             showSearch: false,
-            searchQuery: ''
+            searchQuery: '',
+            nombreUsuario: '' // ✅ NUEVO
         }
+    },
+    computed: {
+        // ✅ NUEVO: Primera letra para el avatar
+        primeraLetra() {
+            return this.nombreUsuario ? this.nombreUsuario.charAt(0).toUpperCase() : 'U';
+        }
+    },
+    mounted() {
+        // ✅ NUEVO: Cargar nombre del usuario
+        this.nombreUsuario = localStorage.getItem('nombre') || 'Usuario';
     },
     methods: {
         toggleSearch() {
@@ -68,7 +78,6 @@ export default {
         },
         handleSearch() {
             if (this.searchQuery.trim()) {
-                // Emitir evento o usar event bus para filtrar servicios
                 this.$emit('search', this.searchQuery);
                 console.log('Buscando:', this.searchQuery);
             }
@@ -143,21 +152,21 @@ export default {
 }
 
 .nav-link:hover {
-    color: #791236;
-    background: rgba(121, 18, 54, 0.1);
+    color: #8B5FBF;
+    background: rgba(139, 95, 191, 0.1);
 }
 
 .nav-link.router-link-active {
-    color: #791236;
+    color: #8B5FBF;
     font-weight: 600;
-    background: rgba(121, 18, 54, 0.15);
+    background: rgba(139, 95, 191, 0.15);
 }
 
 .search-btn {
     color: #666;
 }
 
-/* Acciones derecha */
+/* ✅ NUEVO: Saludo y avatar del usuario */
 .header-actions {
     grid-column: 3;
     display: flex;
@@ -165,12 +174,37 @@ export default {
     align-items: center;
 }
 
-.mobile-search-btn {
-    display: none;
-    background: none;
-    border: none;
-    font-size: 1.5rem;
+.user-greeting {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.greeting-text {
+    font-size: 0.95rem;
+    color: #333;
+    font-weight: 500;
+}
+
+.user-avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #8B5FBF, #CAA6F7);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 1.1rem;
+    text-decoration: none;
+    transition: all 0.3s ease;
     cursor: pointer;
+}
+
+.user-avatar:hover {
+    transform: scale(1.1);
+    box-shadow: 0 4px 12px rgba(139, 95, 191, 0.3);
 }
 
 /* Barra de búsqueda */
@@ -205,12 +239,12 @@ export default {
 
 .search-input:focus {
     outline: none;
-    border-color: #791236;
+    border-color: #8B5FBF;
 }
 
 .search-submit {
     padding: 0.75rem 1.5rem;
-    background: #791236;
+    background: #8B5FBF;
     color: white;
     border: none;
     border-radius: 4px;
@@ -220,7 +254,7 @@ export default {
 }
 
 .search-submit:hover {
-    background: #a01648;
+    background: #CAA6F7;
 }
 
 .search-close {
@@ -244,30 +278,12 @@ export default {
         height: 40px;
     }
     
-    /* Ocultar navegación en móvil */
     .nav-links {
         display: none;
     }
     
-    /* Mostrar botón de búsqueda móvil */
-    .mobile-search-btn {
-        display: block;
-    }
-    
-    /* Menú hamburguesa (implementar después) */
-}
-
-@media (max-width: 480px) {
-    .logo-img {
-        height: 35px;
-    }
-    
-    .search-bar {
-        padding: 0.75rem 1rem;
-    }
-    
-    .search-input {
-        font-size: 0.9rem;
+    .greeting-text {
+        display: none;
     }
 }
 </style>

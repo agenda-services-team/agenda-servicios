@@ -12,6 +12,8 @@ import Galeria from '../views/Galeria.vue';
 import Configuracion from '../views/Configuracion.vue';
 import { useAuthStore } from '../store';
 import axios from 'axios';
+//de nuevo alex : 🤡
+import DetalleServicio from '../views/DetalleServicio.vue';
 
 // ✅ alex: CREAR ESTE ARCHIVO NUEVO
 import ServiciosCatalogo from '../views/ServiciosCatalogo.vue';
@@ -48,6 +50,12 @@ const routes = [
         path: '/servicios',  // 😈 jamas modificar: propiedad de alex 😡
         name: 'ServiciosCliente',
         component: ServiciosCliente,
+        meta: { requiresAuth: true, requiresCliente: true }
+    },
+    {
+        path: '/servicio/:id',
+        name: 'DetalleServicio',
+        component: DetalleServicio,
         meta: { requiresAuth: true, requiresCliente: true }
     },
     {

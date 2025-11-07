@@ -7,7 +7,7 @@ const router = express.Router();
 // Crear una cita
 router.post("/", autenticar, async (req, res) => {
     try {
-        const { id_servicio, fecha, hora } = req.body;
+        const { id_servicio, fecha, hora, notas } = req.body;
         const id_cliente = req.usuario.id_usuario;
 
         if (!id_servicio || !fecha || !hora)
@@ -27,8 +27,8 @@ router.post("/", autenticar, async (req, res) => {
             .from("citas")
             .select("*")
             .eq("id_servicio", id_servicio)
-            .eq("fecha", fecha)
-            .eq("hora", hora);
+            .eq("fecha_cita", fecha)  // ✅ CAMBIO 1: fecha → fecha_cita
+            .eq("hora_cita", hora);   // ✅ CAMBIO 2: hora → hora_cita
 
         if (errorSelect) throw errorSelect;
 
@@ -37,7 +37,15 @@ router.post("/", autenticar, async (req, res) => {
 
         const { data, error } = await supabase
             .from("citas")
-            .insert([{ id_cliente, id_servicio, fecha, hora, estado: "activa", creado_en: new Date() }])
+            .insert([{ 
+                id_cliente, 
+                id_servicio, 
+                fecha_cita: fecha,        // ✅ CAMBIO 3: fecha → fecha_cita
+                hora_cita: hora,          // ✅ CAMBIO 4: hora → hora_cita
+                notas: notas || null,
+                estado: "pendiente",      // ✅ CAMBIO 5: "activa" → "pendiente" (según schema)
+                fecha_reserva: new Date() // ✅ CAMBIO 6: creado_en → fecha_reserva
+            }])
             .select();
 
         if (error) throw error;
@@ -54,9 +62,9 @@ router.get("/", autenticar, async (req, res) => {
     try {
         const { data, error } = await supabase
             .from("citas")
-            .select("*, usuarios(id_usuario, nombre, correo), servicios(id_servicio, nombre, descripcion, precio)")
-            .order("fecha", { ascending: true })
-            .order("hora", { ascending: true });
+            .select("*, usuarios(id_usuario, nombre, correo), servicios(id_servicio, nombre_servicio, descripcion, precio)")
+            .order("fecha_cita", { ascending: true })  // ✅ fecha → fecha_cita
+            .order("hora_cita", { ascending: true });  // ✅ hora → hora_cita
 
         if (error) throw error;
 
@@ -64,7 +72,7 @@ router.get("/", autenticar, async (req, res) => {
             ...c,
             cliente: c.usuarios?.nombre,
             correo: c.usuarios?.correo,
-            servicio: c.servicios?.nombre,
+            servicio: c.servicios?.nombre_servicio, // ✅ nombre → nombre_servicio
             precio: c.servicios?.precio,
             descripcion: c.servicios?.descripcion
         }));
@@ -83,7 +91,7 @@ router.get("/:id", autenticar, async (req, res) => {
 
         const { data, error } = await supabase
             .from("citas")
-            .select("*, usuarios(id_usuario, nombre, correo), servicios(id_servicio, nombre, descripcion, precio)")
+            .select("*, usuarios(id_usuario, nombre, correo), servicios(id_servicio, nombre_servicio, descripcion, precio)")
             .eq("id_cita", id)
             .single();
 
@@ -93,7 +101,7 @@ router.get("/:id", autenticar, async (req, res) => {
             ...data,
             cliente: data.usuarios?.nombre,
             correo: data.usuarios?.correo,
-            servicio: data.servicios?.nombre,
+            servicio: data.servicios?.nombre_servicio, // ✅ nombre → nombre_servicio
             precio: data.servicios?.precio,
             descripcion: data.servicios?.descripcion
         };
@@ -127,8 +135,8 @@ router.put("/:id", autenticar, async (req, res) => {
             .from("citas")
             .select("*")
             .neq("id_cita", id)
-            .eq("fecha", fecha)
-            .eq("hora", hora);
+            .eq("fecha_cita", fecha)  // ✅ fecha → fecha_cita
+            .eq("hora_cita", hora);   // ✅ hora → hora_cita
 
         if (errorSelect) throw errorSelect;
 
@@ -137,7 +145,10 @@ router.put("/:id", autenticar, async (req, res) => {
 
         const { data, error } = await supabase
             .from("citas")
-            .update({ fecha, hora })
+            .update({ 
+                fecha_cita: fecha,  // ✅ fecha → fecha_cita
+                hora_cita: hora     // ✅ hora → hora_cita
+            })
             .eq("id_cita", id)
             .select();
 
