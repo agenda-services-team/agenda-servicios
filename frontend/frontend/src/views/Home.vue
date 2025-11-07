@@ -166,10 +166,10 @@ export default {
     position: relative;
 }
 
-/* Overlay */
+/* Overlay-> aqui modifico la posicion del hero */
 .hero-overlay {
     position: absolute;
-    top: 250px;
+    top: 150px;
     right: 4%;
     text-align: center;
     z-index: 1;

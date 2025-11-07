@@ -83,32 +83,55 @@ export default {
         this.cargarCitas()
     },
     methods: {
-        cargarCitas() {
-            // ejemplo de un array de citas
-            const dummyData = [
-                { id: 1, servicio: 'Corte de Pelo', fechaHoraInicio: '2025-10-08T10:00:00', fechaHoraFin: '2025-10-08T11:00:00', estado: 'confirmado', cliente: 'Maria R.', empleado: 'Laura G.' },
-                { id: 2, servicio: 'Manicura', fechaHoraInicio: '2025-10-08T11:30:00', fechaHoraFin: '2025-10-08T12:30:00', estado: 'pendiente', cliente: 'Juana T.', empleado: 'María P.' },
-                { id: 3, servicio: 'Tinte Completo', fechaHoraInicio: '2025-10-09T14:00:00', fechaHoraFin: '2025-10-09T16:00:00', estado: 'confirmado', cliente: 'Ana P.', empleado: 'Laura G.' },
-            ];
-
-            const eventos = dummyData.map(cita => ({
-                id: cita.id,
-                // Combina cliente y servicio para el título
-                title: `${cita.cliente} \n ${cita.servicio}`,
-                start: cita.fechaHoraInicio,
-                end: cita.fechaHoraFin,
-                // Usamos la propiedad 'color' para el fondo del evento
-                color: this.getEventColor(cita.estado),
-                extendedProps: {
-                    estado: cita.estado,
-                    cliente: cita.cliente,
-                    empleado: cita.empleado
+        async cargarCitas() {
+            try {
+                const token = localStorage.getItem('token');
+                
+                if (!token) {
+                    this.$router.push('/login');
+                    return;
                 }
-            }))
 
-            this.allCitas = eventos; // Guardamos todas las citas
-            this.calendarOptions.events = eventos; // Inicialmente mostramos todas
-            this.calendarApi = this.$refs.fullCalendar.getApi();
+                console.log('📞 Llamando a /api/citas/proveedor');
+
+                const respuesta = await fetch('http://localhost:4000/api/citas/proveedor', {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+
+                if (!respuesta.ok) {
+                    const error = await respuesta.text();
+                    throw new Error(error);
+                }
+
+                const data = await respuesta.json();
+                console.log('✅ Citas del proveedor:', data);
+
+                const eventos = data.map(cita => ({
+                    id: cita.id,
+                    title: `${cita.cliente}\n${cita.servicio}`,
+                    start: cita.fechaHoraInicio,
+                    end: cita.fechaHoraFin,
+                    color: this.getEventColor(cita.estado),
+                    extendedProps: {
+                        estado: cita.estado,
+                        cliente: cita.cliente,
+                        empleado: cita.empleado,
+                        notas: cita.notas,
+                        telefono: cita.telefono,
+                        precio: cita.precio
+                    }
+                }));
+
+                this.allCitas = eventos;
+                this.calendarOptions.events = eventos;
+                this.calendarApi = this.$refs.fullCalendar.getApi();
+
+            } catch (error) {
+                console.error('❌ Error al cargar citas:', error);
+                alert('Error al cargar las citas: ' + error.message);
+            }
         },
         // --- Lógica de FullCalendar ---
         handleDatesSet(info) {
