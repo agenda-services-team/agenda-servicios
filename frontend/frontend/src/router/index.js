@@ -13,8 +13,11 @@ import Configuracion from '../views/Configuracion.vue';
 import { useAuthStore } from '../store';
 import axios from 'axios';
 
+// ✅ alex: CREAR ESTE ARCHIVO NUEVO
+import ServiciosCatalogo from '../views/ServiciosCatalogo.vue';
+
 // Importaciones de vistas de cliente
-import CitasCliente from '../views/CitasCliente.vue'; // ✅ CORREGIDO
+import CitasCliente from '../views/CitasCliente.vue';
 import PerfilCliente from '../views/PerfilCliente.vue';
 
 const routes = [
@@ -34,25 +37,30 @@ const routes = [
         name: 'Registro',
         component: Registro
     },
+    {
+        path: '/serviciosCatalogo',  //  mas corta al parecer
+        name: 'ServiciosCatalogo',
+        component: ServiciosCatalogo,  
+    },
 
     // Rutas de cliente (requieren autenticación)
     {
-        path: '/servicios',
-        name: 'Servicios',
+        path: '/servicios',  // 😈 jamas modificar: propiedad de alex 😡
+        name: 'ServiciosCliente',
         component: ServiciosCliente,
-        meta: { requiresAuth: true, requiresCliente: true } // ✅ AGREGADO
+        meta: { requiresAuth: true, requiresCliente: true }
     },
     {
-        path: '/cliente/mis-citas', // ✅ CAMBIADO para consistencia
+        path: '/cliente/mis-citas',
         name: 'CitasCliente',
         component: CitasCliente,
-        meta: { requiresAuth: true, requiresCliente: true } // ✅ AGREGADO
+        meta: { requiresAuth: true, requiresCliente: true }
     },
     {
         path: '/cliente/perfil',
         name: 'PerfilCliente',
         component: PerfilCliente,
-        meta: { requiresAuth: true, requiresCliente: true } // ✅ AGREGADO
+        meta: { requiresAuth: true, requiresCliente: true }
     },
 
     // Rutas de proveedor (Dashboard)
@@ -60,14 +68,14 @@ const routes = [
         path: '/dashboard',
         name: 'Dashboard',
         component: Dashboard,
-        meta: { requiresAuth: true, requiresProveedor: true }, // ✅ AGREGADO
+        meta: { requiresAuth: true, requiresProveedor: true },
         children: [
             { path: '', component: Inicio },
             { path: 'agenda', component: Agenda },
-            { path: 'emprendimiento', component: RegistrarEmprendimiento }, // para registrar emprendimiento
-            { path: 'servicios', component: Servicios }, // para mostrar los servicios
-            { path: 'galeria', component: Galeria },//una galeria de imagenes de los trabajos del proveedor
-            { path: 'configuracion', component: Configuracion } // configuración del perfil del proveedor
+            { path: 'emprendimiento', component: RegistrarEmprendimiento },
+            { path: 'servicios', component: Servicios },  // ✅ Servicios del proveedor
+            { path: 'galeria', component: Galeria },
+            { path: 'configuracion', component: Configuracion }
         ],
     },
 ];
@@ -79,31 +87,26 @@ const router = createRouter({
     linkExactActiveClass: 'router-link-exact-active',
 });
 
-// ✅ GUARD MEJORADO
 router.beforeEach(async (to, from, next) => {
     const store = useAuthStore();
     const isAuthenticated = store.isAuthenticated;
     const tipoUsuario = store.user?.tipo_usuario;
 
-    // 1. Verificar autenticación para rutas protegidas
     if (to.meta.requiresAuth && !isAuthenticated) {
         next('/login');
         return;
     }
 
-    // 2. Verificar que clientes no accedan a dashboard
     if (to.meta.requiresProveedor && tipoUsuario === 'cliente') {
-        next('/servicios');
+        next('/mis-servicios');  // ✅ Redirige a la ruta correcta
         return;
     }
 
-    // 3. Verificar que proveedores no accedan a rutas de cliente
     if (to.meta.requiresCliente && tipoUsuario === 'proveedor') {
         next('/dashboard');
         return;
     }
 
-    // 4. Verificar emprendimiento solo para proveedores en dashboard
     if (to.path.startsWith('/dashboard') && to.path !== '/dashboard/emprendimiento' && isAuthenticated && tipoUsuario === 'proveedor') {
         try {
             const id_usuario = localStorage.getItem('id_usuario');

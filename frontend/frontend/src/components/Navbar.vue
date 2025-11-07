@@ -1,10 +1,11 @@
 <template>
     <header class="navbar">
         <!-- imagen del logo -->
-        <div class="navbar-left">
+        <router-link to="/" class="navbar-left">
             <img src="/src/images/LogoApp.png" alt="Logo" class="logo" />
             <h1 class="brand-name">OaxacaGlow</h1>
-        </div>
+        </router-link>
+
 
         <!-- botones para iniciar sesión o unirte -->
         <div class="navbar-right">
@@ -30,14 +31,17 @@ export default {
     --blanco: #FFFFFF;
 }
 
-.navbar {
-    background: var(--blanco);
-    padding: 15px 30px;
+.navbar-left {
     display: flex;
-    justify-content: space-between;
     align-items: center;
-    border-bottom: 2px solid var(--lavanda-clara);
-    box-shadow: 0 2px 8px rgba(139, 95, 191, 0.1);
+    gap: 12px;
+    text-decoration: none; /* ✅ Quitar subrayado */
+    cursor: pointer; /* ✅ Mostrar que es clickeable */
+    transition: opacity 0.3s ease; /* ✅ Efecto hover suave */
+}
+
+.navbar-left:hover {
+    opacity: 0.8; /* ✅ Efecto al pasar el mouse */
 }
 
 /* Lado izquierdo */
@@ -55,7 +59,7 @@ export default {
 .brand-name {
     font-size: 22px;
     font-weight: 700;
-    color: var(--morado-suave);
+    color: black;
     letter-spacing: 0.5px;
 }
 
