@@ -23,6 +23,47 @@ const upload = multer({
 
 const router = express.Router();
 
+// ✅ ENDPOINT PÚBLICO (SIN autenticación) - DEBE IR PRIMERO
+router.get('/publicos', async (req, res) => {
+    try {
+        const { data, error } = await supabase
+            .from("servicios")
+            .select(`
+                id_servicio,
+                nombre_servicio,
+                descripcion,
+                precio,
+                duracion,
+                imagen_referencia,
+                emprendimientos (
+                    nombre_negocio,
+                    domicilio
+                )
+            `)
+            .order("id_servicio", { ascending: false });
+
+        if (error) throw error;
+
+        // Formatear respuesta
+        const servicios = data.map(s => ({
+            id_servicio: s.id_servicio,
+            nombre: s.nombre_servicio,
+            descripcion: s.descripcion,
+            precio: s.precio,
+            duracion: s.duracion,
+            imagen: s.imagen_referencia,
+            nombre_emprendimiento: s.emprendimientos?.nombre_negocio || "Sin nombre",
+            direccion: s.emprendimientos?.domicilio || "Sin dirección"
+        }));
+
+        res.json(servicios);
+    } catch (error) {
+        console.error('Error al obtener servicios públicos:', error);
+        res.status(500).json({ error: 'Error al obtener servicios' });
+    }
+});
+
+// ⬇️ RUTAS CON AUTENTICACIÓN (el resto del código sin cambios)
 
 router.post("/", autenticar, upload.single("imagen"), async (req, res) => {
     try {

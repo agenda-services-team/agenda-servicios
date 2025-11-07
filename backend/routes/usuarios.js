@@ -2,7 +2,7 @@ import express from "express";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import { supabase } from "../config/supabaseClient.js";
-
+import { autenticar } from "../middleware/auth.js"; // ✅ Importar middleware
 
 const router = express.Router();
 
@@ -78,6 +78,32 @@ router.post("/login", async (req, res) => {
     } catch (err) {
         console.error("Error en login:", err.message);
         res.status(500).send("Error en el login");
+    }
+});
+
+// ✅ NUEVO ENDPOINT: Obtener perfil del usuario
+router.get("/perfil/:id", autenticar, async (req, res) => {
+    try {
+        const { id } = req.params;
+
+        // Verificar que el usuario solo pueda ver su propio perfil
+        if (parseInt(id) !== req.usuario.id_usuario) {
+            return res.status(403).json({ error: "No autorizado" });
+        }
+
+        const { data, error } = await supabase
+            .from("usuarios")
+            .select("id_usuario, nombre, correo, telefono, fecha_registro, tipo_usuario")
+            .eq("id_usuario", id)
+            .single();
+
+        if (error) throw error;
+        if (!data) return res.status(404).json({ error: "Usuario no encontrado" });
+
+        res.json(data);
+    } catch (err) {
+        console.error("Error al obtener perfil:", err.message);
+        res.status(500).json({ error: "Error al obtener perfil" });
     }
 });
 
